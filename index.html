@@ -675,12 +675,32 @@
             if(confirm(`ZERAR o stock de ${pendentes.length} itens na NUVEM?`)) {
                 window.showToast("A enviar para a Nuvem...", "info");
                 const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
+                
+                // Usar writeBatch para zerar em lotes rápidos de 400 em telemóvel
+                let batch = writeBatch(db);
+                let opCount = 0;
+                let totalZeradados = 0;
+
                 for (const i of pendentes) {
                     const docId = `${i.codigo}_${i.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
                     const payload = {...i, fisico: 0, dif: 0 - i.sistema, cmc_unitario: i.cmc || 0, lote: "", validade: "", obs: "NÃO ENCONTRADO", operador: operadorAtual, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now()};
-                    await setDoc(doc(colRef, docId), payload);
+                    
+                    batch.set(doc(colRef, docId), payload);
+                    opCount++;
+                    totalZeradados++;
+
+                    if (opCount >= 400) {
+                        await batch.commit();
+                        batch = writeBatch(db);
+                        opCount = 0;
+                    }
                 }
-                window.addLog(`Zerou ${pendentes.length} itens.`); window.showToast("Itens zerados!", "success"); window.fecharModalConfig();
+
+                if (opCount > 0) {
+                    await batch.commit();
+                }
+
+                window.addLog(`Zerou ${totalZeradados} itens.`); window.showToast("Itens zerados!", "success"); window.fecharModalConfig();
             }
         }
 
@@ -942,14 +962,14 @@
             }
         };
 
-        // CHEFE ENVIA O CATÁLOGO DO EXCEL PARA A NUVEM
+        // CHEFE ENVIA O CATÁLOGO DO EXCEL PARA A NUVEM (CORRIGIDO PARA DIVIDIR EM GRUPOS EXATOS DE 400 PRODUTOS)
         document.getElementById('file-input').onchange = function(e) {
             if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o Chefe de Setor pode importar dados!", "error");
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
             
             if (!e.target.files || e.target.files.length === 0) return;
             
-            window.showToast("A enviar catálogo para a Nuvem...", "info"); 
+            window.showToast("A processar folha de cálculo...", "info"); 
             const reader = new FileReader();
             reader.onload = async function(evt) {
                 try {
@@ -976,18 +996,14 @@
                     
                     const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
                     
-                    // Usamos o recurso de WriteBatch do Firebase para enviar até 500 registos de uma vez só!
-                    // Isso acelera o processo em 100x e evita que os navegadores de telemóveis travem ou cancelem o loop.
-                    let batch = writeBatch(db);
-                    let batchCount = 0;
-                    let totalSaved = 0;
-                    
+                    // Primeiro, extraímos todos os itens válidos da folha
+                    const itemsToSave = [];
                     for(let r=hRow+1; r<rows.length; r++) {
                         let row = rows[r]; 
                         if (row && row[idxDesc]) {
                             const l = idxLoc !== -1 ? String(row[idxLoc] || 'ESTOQUE PRINCIPAL').trim().toUpperCase() : 'ESTOQUE PRINCIPAL'; 
                             const f = idxFam !== -1 ? String(row[idxFam] || 'SEM FAMÍLIA').trim().toUpperCase() : 'SEM FAMÍLIA';
-                            const item = { 
+                            itemsToSave.push({ 
                                 codigo: idxCod !== -1 ? String(row[idxCod] || '').trim().toUpperCase() : '', 
                                 descricao: String(row[idxDesc]).trim().toUpperCase(), 
                                 gtin: idxGtin !== -1 ? String(row[idxGtin] || '').trim() : '', 
@@ -996,30 +1012,35 @@
                                 sistema: parseFloat(String(row[idxSist]).replace(',','.')) || 0, 
                                 cmc: parseFloat(String(row[idxCmc]).replace(',','.')) || 0, 
                                 unidade: String(row[idxUn] || 'UN').trim().toUpperCase() 
-                            };
-                            
-                            const docId = `${item.codigo}_${item.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
-                            batch.set(doc(colRefCatalog, docId), item);
-                            
-                            batchCount++;
-                            totalSaved++;
-                            
-                            // O limite de operações por batch no Firestore é 500. Enviamos lotes de 400 para segurança.
-                            if (batchCount >= 400) {
-                                await batch.commit();
-                                batch = writeBatch(db);
-                                batchCount = 0;
-                            }
+                            });
                         }
                     }
-                    
-                    // Envia o último lote restante
-                    if (batchCount > 0) {
+
+                    if(itemsToSave.length === 0) {
+                        return window.showToast("Nenhum produto válido encontrado na folha!", "warning");
+                    }
+
+                    window.showToast(`Preparados ${itemsToSave.length} itens. A enviar...`, "info");
+
+                    // Dividimos a lista de produtos em "chunks" (pedaços) exatos de 400 itens
+                    const chunkSize = 400;
+                    for (let i = 0; i < itemsToSave.length; i += chunkSize) {
+                        const chunk = itemsToSave.slice(i, i + chunkSize);
+                        const batch = writeBatch(db);
+
+                        chunk.forEach(item => {
+                            const docId = `${item.codigo}_${item.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
+                            batch.set(doc(colRefCatalog, docId), item);
+                        });
+
+                        // Envia o lote de 400 produtos de forma robusta e aguarda confirmação da rede
                         await batch.commit();
+                        const progresso = Math.min(100, Math.round(((i + chunk.length) / itemsToSave.length) * 100));
+                        window.showToast(`A enviar catálogo... ${progresso}% concluído.`, "info");
                     }
                     
-                    window.showToast(`Sucesso! ${totalSaved} itens sincronizados na Nuvem.`, "success");
-                    window.addLog(`Catálogo geral carregado na Nuvem (${totalSaved} itens)`);
+                    window.showToast(`Sucesso! ${itemsToSave.length} itens sincronizados na Nuvem.`, "success");
+                    window.addLog(`Catálogo geral carregado na Nuvem (${itemsToSave.length} itens)`);
                     
                     // Força a auto-sincronização no telemóvel do chefe de imediato
                     await window.sincronizarCatalogoNuvem();
