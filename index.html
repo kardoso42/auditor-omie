@@ -3,59 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auditor Estoque V-31.0 - Premium</title>
+    <title>Auditor Estoque V-32.0 - Cloud Sinc</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
-        /* Variáveis de Tema Claro (Default) */
         :root { 
-            --blue: #2563eb; 
-            --blue-dark: #1e40af;
-            --green: #10b981; 
-            --red: #ef4444; 
-            --gray: #64748b; 
-            --orange: #f59e0b; 
-            --bg: #f8fafc; 
-            --surface: #ffffff;
-            --text: #334155;
-            --border: #e2e8f0;
+            --blue: #2563eb; --blue-dark: #1e40af; --green: #10b981; --red: #ef4444; 
+            --gray: #64748b; --orange: #f59e0b; --bg: #f8fafc; --surface: #ffffff;
+            --text: #334155; --border: #e2e8f0;
         }
 
-        /* Variáveis de Tema Escuro */
         body.dark-mode {
-            --blue: #3b82f6; 
-            --blue-dark: #93c5fd;
-            --green: #34d399; 
-            --red: #f87171; 
-            --gray: #94a3b8; 
-            --orange: #fbbf24; 
-            --bg: #0f172a; 
-            --surface: #1e293b;
-            --text: #f1f5f9;
-            --border: #334155;
+            --blue: #3b82f6; --blue-dark: #93c5fd; --green: #34d399; --red: #f87171; 
+            --gray: #94a3b8; --orange: #fbbf24; --bg: #0f172a; --surface: #1e293b;
+            --text: #f1f5f9; --border: #334155;
         }
         
         body { 
             font-family: 'Inter', system-ui, -apple-system, sans-serif; 
-            margin: 0; 
-            padding: 15px; 
-            background: var(--bg); 
-            color: var(--text); 
-            -webkit-font-smoothing: antialiased;
-            transition: background-color 0.3s, color 0.3s;
+            margin: 0; padding: 15px; background: var(--bg); color: var(--text); 
+            -webkit-font-smoothing: antialiased; transition: background-color 0.3s, color 0.3s;
         }
         
-        /* Layout & Cards */
         .app-header { text-align: center; margin-bottom: 20px; margin-top: 10px; position: relative; }
         .app-header h2 { margin: 0; color: var(--blue-dark); font-weight: 700; font-size: 22px; letter-spacing: -0.5px; }
         .app-header p { margin: 4px 0 0; font-size: 12px; color: var(--gray); font-weight: 500; }
         
         .header-actions { position: absolute; right: 0; top: 0; display: flex; gap: 8px; }
         #btn-theme, #btn-config {
-            width: 40px; height: 40px; padding: 0; 
-            border-radius: 50%; background: var(--surface); border: 1px solid var(--border); 
+            width: 40px; height: 40px; padding: 0; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); 
             font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); color: var(--text);
             display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;
         }
@@ -77,7 +55,6 @@
         .dash-card h4 { margin: 0; font-size: 12px; color: var(--gray); text-transform: uppercase; font-weight: 600; }
         .dash-card p { margin: 8px 0 0; font-size: 20px; font-weight: 700; color: var(--blue-dark); }
         
-        /* Selects & Inputs */
         .multi-select-box { border: 1px solid var(--border); border-radius: 8px; padding: 5px; max-height: 140px; overflow-y: auto; background: var(--surface); margin-top: 8px; }
         .multi-select-item { display: flex; align-items: center; gap: 10px; font-size: 12px; padding: 10px 12px; border-bottom: 1px solid var(--border); transition: background 0.2s; }
         .multi-select-item:hover { opacity: 0.8; }
@@ -87,14 +64,12 @@
         
         input[type="text"], input[type="number"], input[type="date"], input[type="file"] { 
             width: 100%; box-sizing: border-box; padding: 14px; border: 1px solid var(--border); 
-            border-radius: 10px; font-size: 14px; background: var(--bg); color: var(--text);
-            transition: all 0.2s; font-family: inherit;
+            border-radius: 10px; font-size: 14px; background: var(--bg); color: var(--text); transition: all 0.2s; font-family: inherit;
         }
         input[type="file"] { padding: 10px; font-size: 12px; background: var(--surface); border: 1px dashed var(--gray); cursor: pointer; }
         input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); background: var(--surface); }
         input[type="text"] { text-transform: uppercase; }
         
-        /* Buttons */
         .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
         button { 
             width: 100%; padding: 14px; border-radius: 10px; border: none; font-weight: 600; 
@@ -108,14 +83,12 @@
         .btn-red { background: var(--red); color: white; }
         .btn-outline { background: transparent; border: 1.5px solid var(--blue); color: var(--blue); font-size: 11px; padding: 12px; }
         
-        /* Table */
         table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11px; margin-top: 15px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
         th { background: var(--bg); color: var(--gray); font-weight: 600; text-transform: uppercase; padding: 12px 8px; border-bottom: 1px solid var(--border); text-align: center; }
         td { padding: 12px 8px; text-align: center; border-bottom: 1px solid var(--border); color: var(--text); font-weight: 500; }
         tr:last-child td { border-bottom: none; }
         tbody tr:hover { opacity: 0.8; cursor: pointer; }
         
-        /* UI Elements */
         .item-res { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; padding: 15px; cursor: pointer; text-align: left; background: var(--surface); transition: all 0.2s; }
         .item-res strong { display: block; color: var(--blue-dark); margin-bottom: 4px; font-size: 13px; }
         
@@ -128,7 +101,6 @@
         input:checked + .slider { background-color: var(--green); }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        /* Modal */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; }
         .modal-content { background: var(--surface); width: 100%; max-width: 400px; padding: 24px; border-radius: 20px; max-height: 90vh; overflow-y: auto; box-sizing: border-box; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3); border: 1px solid var(--border); }
         .m-info-box { background: var(--bg); padding: 15px; border-radius: 12px; margin: 15px 0; border: 1px solid var(--border); border-left: 4px solid var(--blue); }
@@ -143,7 +115,6 @@
         .vencido { background: rgba(239, 68, 68, 0.1) !important; color: var(--red); }
         .vence-breve { background: rgba(245, 158, 11, 0.1) !important; color: var(--orange); }
 
-        /* Estilos das Abas e Relatórios */
         .tabs { display: flex; background: var(--border); padding: 4px; border-radius: 12px; margin: 0 auto 20px; max-width: 400px; }
         .tab-btn { flex: 1; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--gray); background: transparent; text-transform: none; letter-spacing: normal; transition: all 0.3s; }
         .tab-btn.active { background: var(--surface); color: var(--blue-dark); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
@@ -168,13 +139,13 @@
         .log-entry:last-child { border-bottom: none; }
         .log-time { color: var(--gray); font-weight: 600; width: 60px; }
         .log-msg { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .log-operador { font-weight: bold; color: var(--blue-dark); margin-right: 5px; }
 
-        /* Tela de Login */
         #view-login { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85vh; }
         .login-card { background: var(--surface); padding: 30px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); border: 1px solid var(--border); width: 100%; max-width: 350px; text-align: center; }
         .user-badge { background: var(--blue); color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; }
+        .cloud-badge { background: var(--green); color: white; padding: 2px 8px; border-radius: 10px; font-size: 9px; vertical-align: middle; margin-left: 5px; }
 
-        /* Estilos de Impressão (PDF) */
         .print-only { display: none; }
         @media print {
             body { background: white; color: black; padding: 0; margin: 0; }
@@ -195,7 +166,7 @@
     <div id="view-login">
         <div class="login-card">
             <h2 style="color: var(--blue-dark); margin-top: 0; font-size: 24px;">Auditor Estoque</h2>
-            <p style="color: var(--gray); font-size: 13px; margin-bottom: 25px;">Identifique-se para iniciar a contagem e registar as suas auditorias.</p>
+            <p style="color: var(--gray); font-size: 13px; margin-bottom: 25px;">Sincronização Cloud Ativada. Identifique-se para registar as auditorias.</p>
             <input type="text" id="login-nome" placeholder="Seu Nome ou Matrícula" style="margin-bottom: 15px; text-align: center; font-weight: bold;">
             <button class="btn-blue" onclick="fazerLogin()">Entrar no Sistema</button>
         </div>
@@ -204,8 +175,8 @@
     <!-- APLICAÇÃO PRINCIPAL -->
     <div id="view-app" style="display:none;">
         <div class="app-header">
-            <h2>Auditor Estoque</h2>
-            <p>Gestão de Inventário</p>
+            <h2>Auditor Estoque <span class="cloud-badge">☁️ CLOUD</span></h2>
+            <p>Gestão de Inventário Sincronizada</p>
             <div class="print-hide">
                 <span class="user-badge">👤 <span id="lbl-operador">Operador</span> <button onclick="fazerLogout()" style="background:none; border:none; color:rgba(255,255,255,0.7); padding:0; margin-left:8px; cursor:pointer; font-size:10px; font-weight:bold;">SAIR</button></span>
             </div>
@@ -251,9 +222,9 @@
 
             <!-- Log Cronológico -->
             <div class="card print-hide" style="padding: 12px 20px;">
-                <h4 style="margin: 0 0 8px 0; font-size: 11px; color: var(--gray); text-transform: uppercase;">🕒 Histórico de Ações</h4>
+                <h4 style="margin: 0 0 8px 0; font-size: 11px; color: var(--gray); text-transform: uppercase;">🕒 Feed em Tempo Real</h4>
                 <div id="log-container">
-                    <div style="font-size:11px; color:var(--gray);">A aguardar contagens...</div>
+                    <div style="font-size:11px; color:var(--gray);">A aguardar contagens da equipa...</div>
                 </div>
             </div>
 
@@ -264,11 +235,11 @@
                 </div>
                 <div style="overflow-x: auto;">
                     <table id="tabela">
-                        <thead><tr><th>Produto</th><th class="col-sist">Sist</th><th>Fis</th><th class="col-sist">Dif</th><th class="col-sist">CMC</th></tr></thead>
+                        <thead><tr><th>Produto</th><th class="col-sist">Sist</th><th>Fis</th><th class="col-sist">Dif</th><th class="col-sist">Operador</th></tr></thead>
                         <tbody id="tabela-body"></tbody>
                     </table>
                 </div>
-                <button onclick="limparTudo()" style="margin-top:20px; color:var(--red); background:none; font-size:10px; border:none; width:100%;">🗑️ LIMPAR AUDITORIA</button>
+                <button onclick="limparTudo()" style="margin-top:20px; color:var(--red); background:none; font-size:10px; border:none; width:100%;">🗑️ LIMPAR AUDITORIA NA NUVEM</button>
             </div>
         </div>
 
@@ -305,7 +276,7 @@
             </div>
 
             <div class="card">
-                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Top 5 Maiores Furos (Valores Absolutos)</h3>
+                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Top 5 Maiores Furos</h3>
                 <div style="overflow-x: auto;">
                     <table id="tabela-top-furos">
                         <thead><tr><th>Produto</th><th>Dif</th><th>Impacto</th></tr></thead>
@@ -316,20 +287,8 @@
                 </div>
             </div>
 
-            <div class="card">
-                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Alerta de Validades (Próx. 30 Dias)</h3>
-                <div style="overflow-x: auto;">
-                    <table id="tabela-vencimentos">
-                        <thead><tr><th>Produto</th><th>Lote</th><th>Validade</th><th>Status</th></tr></thead>
-                        <tbody id="tabela-vencimentos-body">
-                            <tr><td colspan="4">Nenhum item em alerta.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
             <div class="card print-hide">
-                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Top Famílias (Peças Contadas)</h3>
+                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Top Famílias Contadas</h3>
                 <div id="chart-familias" style="margin-top: 15px;">
                     <p style="font-size:12px; color:var(--gray); text-align:center; margin: 0;">A aguardar dados...</p>
                 </div>
@@ -342,33 +301,25 @@
 
             <button class="btn-blue print-hide" onclick="imprimirPDF()" style="margin-top: 10px;">📄 GERAR RELATÓRIO PDF</button>
         </div>
-
     </div> <!-- FIM DO VIEW-APP -->
 
     <div id="toast-container"></div>
 
-    <!-- Modal de Importação e Filtros -->
+    <!-- Modal de Importação -->
     <div id="modal-config" class="modal">
         <div class="modal-content">
             <h3 style="margin-top: 0; font-size: 16px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;">⚙️ Importação e Filtros</h3>
-            
             <label style="font-size: 11px; font-weight: bold;">1. FOLHA DE CÁLCULO (OMIE):</label>
             <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="margin-bottom: 15px;">
-            
             <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📍 LOCAIS (MARCAR/DESMARCAR):</label>
             <div id="filtro-local-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">A aguardar ficheiro...</small></div>
-
             <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📂 FAMÍLIAS (MARCAR/DESMARCAR):</label>
             <div id="filtro-familia-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">A aguardar ficheiro...</small></div>
-
+            
             <div class="grid-buttons">
-                <button class="btn-outline" onclick="exportarBackup()">💾 BACKUP</button>
-                <button class="btn-outline" onclick="document.getElementById('import-backup').click()">📥 RESTAURAR</button>
-                <input type="file" id="import-backup" style="display:none" onchange="importarBackup(event)">
                 <button class="btn-outline" style="border-color: var(--orange); color: var(--orange);" onclick="verPendentes()">🔍 PENDENTES</button>
                 <button class="btn-outline" style="border-color: var(--red); color: var(--red);" onclick="zerarNaoContados()">⚠️ ZERAR RESTANTES</button>
             </div>
-            
             <button onclick="fecharModalConfig()" style="background:var(--bg); color:var(--text); margin-top:20px; border:1px solid var(--border); width:100%; border-radius:10px; padding: 14px; font-weight:bold; cursor:pointer; text-transform: uppercase;">Fechar Menu</button>
         </div>
     </div>
@@ -398,12 +349,10 @@
                 <div><label style="font-size:11px;">Lote:</label><input type="text" id="m-lote"></div>
                 <div><label style="font-size:11px;">Validade:</label><input type="date" id="m-validade"></div>
             </div>
-            <div id="m-venc-alerta-red" style="display:none; font-size:10px; font-weight:bold; color:var(--red); margin-top:5px;">⚠️ PRODUTO VENCIDO!</div>
-            <div id="m-venc-alerta-orange" style="display:none; font-size:10px; font-weight:bold; color:var(--orange); margin-top:5px;">⚠️ VENCE EM BREVE (30 DIAS)</div>
             <div style="margin-top:10px;"><label style="font-size:11px;">OBSERVAÇÕES:</label><input type="text" id="m-obs"></div>
             
             <div style="margin-top:20px;">
-                <button id="btn-salvar-normal" class="btn-green" onclick="salvarFinal('substituir')">✅ GUARDAR CONTAGEM</button>
+                <button id="btn-salvar-normal" class="btn-green" onclick="salvarFinal('substituir')">☁️ GUARDAR NA NUVEM</button>
                 <div id="botoes-duplicado" style="display:none; gap:10px;"><button class="btn-blue" onclick="salvarFinal('somar')">➕ SOMAR</button><button class="btn-orange" onclick="salvarFinal('substituir')">🔄 TROCAR</button></div>
                 <button id="btn-excluir-item" class="btn-red" style="display:none; margin-top:10px;" onclick="excluirContagemEspecifica()">🗑️ APAGAR CONTAGEM</button>
             </div>
@@ -411,203 +360,375 @@
         </div>
     </div>
 
-    <script>
+    <!-- SCRIPT TIPO MÓDULO PARA IMPORTAR FIREBASE -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        // =========================================================================
+        // CONFIGURAÇÃO DO FIREBASE
+        // =========================================================================
+        let firebaseConfig = {
+            apiKey: "AIzaSyCUqfEuvJNSKERsE-Cj1U3ysbJ6GB_4IGg",
+            authDomain: "auditor-estoque.firebaseapp.com",
+            projectId: "auditor-estoque",
+            storageBucket: "auditor-estoque.firebasestorage.app",
+            messagingSenderId: "969025703082",
+            appId: "1:969025703082:web:11d3fa2060886071edd4d3"
+        };
+        
+        // Mantém fallback caso teste local
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'auditor-estoque-v32';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // VARIÁVEIS GLOBAIS DA APLICAÇÃO
         let baseDados = [];
-        const STORAGE_KEY = 'auditoria_omie_v31_0';
-        let contagens = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        let contagens = [];
         let logAcoes = [];
         let itemAtual = null; let indexEdicao = -1; let html5QrCode = null; let diasParaVencer = null;
         let operadorAtual = localStorage.getItem('operador_atual') || '';
-        
-        // --- SISTEMA DE LOGIN ---
-        function checkLogin() {
+        let currentUser = null;
+
+        // INICIA AUTENTICAÇÃO INVISÍVEL
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch(e) { console.warn("Erro Auth. Vai precisar de configurar o Firebase no Vercel."); }
+        };
+        initAuth();
+
+        onAuthStateChanged(auth, (u) => {
+            currentUser = u;
+            if (currentUser) {
+                // Inicia a escuta da Nuvem (Real-time Sync)
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
+                onSnapshot(colRef, (snapshot) => {
+                    const newContagens = [];
+                    snapshot.forEach(docSnap => { newContagens.push({ id: docSnap.id, ...docSnap.data() }); });
+                    contagens = newContagens.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    if (operadorAtual) window.render(); // Atualiza o ecrã instantaneamente
+                }, (error) => { console.error(error); });
+            }
+        });
+
+        // FUNÇÕES TORNADAS GLOBAIS PARA O HTML
+        window.checkLogin = function() {
             if (operadorAtual) {
                 document.getElementById('view-login').style.display = 'none';
                 document.getElementById('view-app').style.display = 'block';
                 document.getElementById('lbl-operador').innerText = operadorAtual;
+                window.render();
             } else {
                 document.getElementById('view-login').style.display = 'flex';
                 document.getElementById('view-app').style.display = 'none';
             }
         }
         
-        function fazerLogin() {
+        window.fazerLogin = function() {
             const nome = document.getElementById('login-nome').value.trim().toUpperCase();
-            if (!nome) return showToast('Digite o seu nome ou matrícula!', 'warning');
-            operadorAtual = nome;
-            localStorage.setItem('operador_atual', operadorAtual);
-            checkLogin();
-            showToast(`Sessão iniciada como ${operadorAtual}`, 'success');
+            if (!nome) return window.showToast('Digite a sua matrícula!', 'warning');
+            operadorAtual = nome; localStorage.setItem('operador_atual', operadorAtual);
+            window.checkLogin(); window.showToast(`Conectado à Nuvem como ${operadorAtual}`, 'success');
         }
         
-        function fazerLogout() {
+        window.fazerLogout = function() {
             if(confirm("Deseja sair da sessão atual?")) {
-                operadorAtual = '';
-                localStorage.removeItem('operador_atual');
-                document.getElementById('login-nome').value = '';
-                checkLogin();
+                operadorAtual = ''; localStorage.removeItem('operador_atual');
+                document.getElementById('login-nome').value = ''; window.checkLogin();
             }
         }
 
-        // --- MODO ESCURO ---
-        function toggleDarkMode() {
+        window.toggleDarkMode = function() {
             document.body.classList.toggle('dark-mode');
             const isDark = document.body.classList.contains('dark-mode');
             document.getElementById('btn-theme').innerText = isDark ? '☀️' : '🌙';
             localStorage.setItem('tema_escuro', isDark);
         }
-        if(localStorage.getItem('tema_escuro') === 'true') toggleDarkMode();
+        if(localStorage.getItem('tema_escuro') === 'true') window.toggleDarkMode();
 
-        // --- SISTEMA DE LOGS ---
-        function addLog(msg, type='info') {
-            const time = new Date().toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-            logAcoes.unshift({time, msg, type});
+        window.addLog = function(msg, type='info', op=operadorAtual) {
+            const time = new Date().toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit'});
+            logAcoes.unshift({time, msg, type, op});
             if(logAcoes.length > 5) logAcoes.pop();
             const container = document.getElementById('log-container');
-            container.innerHTML = logAcoes.map(l => `<div class="log-entry"><span class="log-time">[${l.time}]</span><span class="log-msg" style="color:${l.type==='error'?'var(--red)':''}">${l.msg}</span></div>`).join('');
+            container.innerHTML = logAcoes.map(l => `<div class="log-entry"><span class="log-time">${l.time}</span><span class="log-msg"><span class="log-operador">${l.op}:</span> ${l.msg}</span></div>`).join('');
         }
 
-        // --- CALCULADORA EMBUTIDA ---
-        function esteCalculo(el) {
+        window.esteCalculo = function(el) {
             try {
-                // Filtra caracteres não matemáticos para segurança e substitui vírgula por ponto
                 let expressao = el.value.replace(/[^0-9+\-*/().,]/g, '').replace(',', '.');
                 if(!expressao) return;
-                // Calcula a expressão com segurança usando Function em vez de eval
                 let resultado = Function('"use strict";return (' + expressao + ')')();
-                // Mostra até 2 casas decimais, mas remove .00 se for inteiro
                 el.value = parseFloat(resultado).toFixed(2).replace(/\.00$/, '');
-            } catch (e) {
-                // Se o cálculo falhar (ex: digitou 3*+), limpa ou ignora
-                showToast("Cálculo inválido", "warning");
-            }
+            } catch (e) { window.showToast("Cálculo inválido", "warning"); }
         }
 
-        function showToast(msg, type = 'info') {
+        window.showToast = function(msg, type = 'info') {
             const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerText = msg;
-            container.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+            const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.innerText = msg;
+            container.appendChild(toast); setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
         }
 
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playBeep(type = 'success') {
+        window.playBeep = function(type = 'success') {
             if(audioCtx.state === 'suspended') audioCtx.resume();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            if (type === 'success') {
-                oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); 
-                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.1);
-            } else {
-                oscillator.type = 'square'; oscillator.frequency.setValueAtTime(300, audioCtx.currentTime); 
-                gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.3);
-            }
+            const oscillator = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
+            if (type === 'success') { oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.1); } 
+            else { oscillator.type = 'square'; oscillator.frequency.setValueAtTime(300, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.3); }
         }
 
-        function abrirModalConfig() {
-            document.getElementById('modal-config').style.display = "flex";
-        }
+        window.abrirModalConfig = function() { document.getElementById('modal-config').style.display = "flex"; }
+        window.fecharModalConfig = function() { document.getElementById('modal-config').style.display = "none"; }
+        window.fecharModal = function() { document.getElementById('modal').style.display = "none"; indexEdicao = -1; diasParaVencer = null; }
 
-        function fecharModalConfig() {
-            document.getElementById('modal-config').style.display = "none";
-        }
+        window.getLocsSel = function() { return Array.from(document.querySelectorAll('.check-l:checked')).map(cb => cb.value); }
 
-        function exportarBackup() {
-            if (contagens.length === 0) return showToast("Não há contagens!", "warning");
-            const blob = new Blob([JSON.stringify(contagens)], {type: 'application/json'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); 
-            a.download = `BACKUP_OMIE_${new Date().toLocaleDateString('pt-PT').replace(/\//g,'-')}.json`; a.click();
-        }
-
-        function importarBackup(event) {
-            const reader = new FileReader(); 
-            reader.onload = function(e) { 
-                contagens = JSON.parse(e.target.result); 
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(contagens)); 
-                render(); addLog("Backup restaurado"); showToast("Restaurado!", "success"); 
-                fecharModalConfig();
-            };
-            reader.readAsText(event.target.files[0]);
-        }
-
-        function getLocsSel() { return Array.from(document.querySelectorAll('.check-l:checked')).map(cb => cb.value); }
-
-        function verPendentes() {
-            if(baseDados.length === 0) return showToast("Importe ficheiro!", "error");
-            const lS = getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
+        window.verPendentes = function() {
+            if(baseDados.length === 0) return window.showToast("Importe ficheiro!", "error");
+            const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
             const pendentes = baseDados.filter(i => !contagens.some(c => c.codigo === i.codigo && c.local === i.local) && (lS.length === 0 || lS.includes(i.local)) && (fS.length === 0 || fS.includes(i.familia)));
             const res = document.getElementById('resultados'); 
             res.innerHTML = `<div style="padding:10px; font-weight:bold; background:var(--orange); color:#fff; text-align:center; border-radius:8px; margin-bottom:5px;">PENDENTES (${pendentes.length})</div>`;
             pendentes.slice(0, 30).forEach(i => { 
                 const d = document.createElement('div'); d.className = 'item-res'; 
                 d.innerHTML = `<strong>${i.descricao}</strong><br><small style="color:var(--red);">PENDENTE EM: ${i.local}</small>`; 
-                d.onclick = () => { indexEdicao = -1; abrirModal(i, false); }; res.appendChild(d); 
+                d.onclick = () => { indexEdicao = -1; window.abrirModal(i, false); }; res.appendChild(d); 
             });
-            document.getElementById('busca-input').value = '';
-            fecharModalConfig();
+            document.getElementById('busca-input').value = ''; window.fecharModalConfig();
         }
 
-        function zerarNaoContados() {
-            if(baseDados.length === 0) return showToast("Importe ficheiro!", "error");
-            const lS = getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
+        window.zerarNaoContados = async function() {
+            if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
+            if(baseDados.length === 0) return window.showToast("Importe ficheiro!", "error");
+            const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
             const pendentes = baseDados.filter(i => !contagens.some(c => c.codigo === i.codigo && c.local === i.local) && (lS.length === 0 || lS.includes(i.local)) && (fS.length === 0 || fS.includes(i.familia)));
-            if(pendentes.length === 0) return showToast("Nenhum pendente!", "info");
-            if(confirm(`ZERAR o stock de ${pendentes.length} itens não contados?`)) {
-                pendentes.forEach(i => { contagens.push({...i, fisico: 0, dif: 0 - i.sistema, cmc_unitario: i.cmc || 0, lote: "", validade: "", obs: "NÃO ENCONTRADO", data: new Date().toLocaleString('pt-PT')}); });
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(contagens)); render(); 
-                addLog(`Zeradados ${pendentes.length} itens não contados.`); showToast("Itens zerados!", "success");
-                fecharModalConfig();
+            if(pendentes.length === 0) return window.showToast("Nenhum pendente!", "info");
+            
+            if(confirm(`ZERAR o stock de ${pendentes.length} itens na NUVEM?`)) {
+                window.showToast("A enviar para a Nuvem...", "info");
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
+                for (const i of pendentes) {
+                    const docId = `${i.codigo}_${i.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
+                    const payload = {...i, fisico: 0, dif: 0 - i.sistema, cmc_unitario: i.cmc || 0, lote: "", validade: "", obs: "NÃO ENCONTRADO", operador: operadorAtual, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now()};
+                    await setDoc(doc(colRef, docId), payload);
+                }
+                window.addLog(`Zerou ${pendentes.length} itens.`); window.showToast("Itens zerados!", "success"); window.fecharModalConfig();
             }
         }
 
-        function excluirContagemEspecifica() { 
-            if(indexEdicao !== -1 && confirm("APAGAR esta contagem?")) { 
-                addLog(`Apagado: ${contagens[indexEdicao].descricao}`, 'error');
-                contagens.splice(indexEdicao, 1); localStorage.setItem(STORAGE_KEY, JSON.stringify(contagens)); 
-                fecharModal(); render(); 
+        window.excluirContagemEspecifica = async function() { 
+            if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
+            if(indexEdicao !== -1 && confirm("APAGAR esta contagem da Nuvem?")) { 
+                const item = contagens[indexEdicao];
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'contagens', item.id));
+                window.addLog(`Apagado: ${item.descricao}`, 'error');
+                window.fecharModal(); 
             } 
         }
 
+        window.abrirModal = function(item, isNovo) {
+            itemAtual = item; const isCego = document.getElementById('modo-cego').checked;
+            document.getElementById('m-nome-edit').value = item.descricao; document.getElementById('m-nome-edit').readOnly = !isNovo;
+            document.getElementById('m-un-edit').value = item.unidade; document.getElementById('m-loc-cod').innerText = `📍 ${item.local} | CÓD: ${item.codigo}`;
+            document.getElementById('m-gtin').innerText = "GTIN: " + (item.gtin || "N/A");
+            
+            document.getElementById('modal-sist-area').style.display = isCego ? 'none' : 'block';
+            document.getElementById('m-sist-val').innerText = `SISTEMA: ${item.sistema} ${item.unidade}`;
+            document.getElementById('m-cmc-val').innerText = `CMC: R$ ${(item.cmc || 0).toFixed(2)}`;
+            
+            if(indexEdicao === -1) {
+                document.getElementById('m-qtd').value = ''; document.getElementById('m-lote').value = '';
+                document.getElementById('m-validade').value = ''; document.getElementById('m-obs').value = '';
+                document.getElementById('m-venc-alerta-red').style.display = 'none'; document.getElementById('m-venc-alerta-orange').style.display = 'none';
+                const idxAnt = contagens.findIndex(c => c.codigo === item.codigo && c.local === item.local);
+                document.getElementById('m-aviso-dup').style.display = idxAnt !== -1 ? 'block' : 'none';
+                document.getElementById('m-qtd-anterior').innerText = idxAnt !== -1 ? contagens[idxAnt].fisico : '';
+                document.getElementById('btn-salvar-normal').style.display = idxAnt !== -1 ? 'none' : 'block';
+                document.getElementById('botoes-duplicado').style.display = idxAnt !== -1 ? 'flex' : 'none';
+                document.getElementById('btn-excluir-item').style.display = 'none';
+            } else { document.getElementById('btn-excluir-item').style.display = 'block'; }
+            document.getElementById('modal').style.display = "flex"; setTimeout(() => document.getElementById('m-qtd').focus(), 300);
+        }
+
+        window.salvarFinal = async function(modo) {
+            if (!currentUser) return window.showToast("A aguardar ligação à nuvem...", "error");
+            window.esteCalculo(document.getElementById('m-qtd')); 
+            const qVal = document.getElementById('m-qtd').value; 
+            if (!qVal) return window.showToast("Digite a Quantidade!", "warning");
+            let novaQtd = parseFloat(qVal);
+            
+            itemAtual.descricao = document.getElementById('m-nome-edit').value.toUpperCase(); itemAtual.unidade = document.getElementById('m-un-edit').value.toUpperCase();
+            let obs = document.getElementById('m-obs').value.toUpperCase();
+            
+            const idxAnt = contagens.findIndex(c => c.codigo === itemAtual.codigo && c.local === itemAtual.local);
+            let targetId = null;
+
+            if (indexEdicao !== -1) { targetId = contagens[indexEdicao].id; }
+            else if (idxAnt !== -1) { targetId = contagens[idxAnt].id; if(modo === 'somar') novaQtd += contagens[idxAnt].fisico; }
+
+            const docId = targetId || `${itemAtual.codigo}_${itemAtual.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
+
+            const payload = {...itemAtual, fisico: novaQtd, dif: novaQtd - itemAtual.sistema, cmc_unitario: itemAtual.cmc || 0, lote: document.getElementById('m-lote').value.toUpperCase(), validade: document.getElementById('m-validade').value, obs: obs, operador: operadorAtual, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now()};
+            
+            try {
+                await setDoc(doc(colRef, docId), payload);
+                window.addLog(`${modo==='somar'?'+':''} ${novaQtd}x ${itemAtual.descricao}`);
+                document.getElementById('busca-input').value = ''; document.getElementById('resultados').innerHTML = '';
+                window.fecharModal(); window.showToast("Nuvem Sincronizada", "success"); document.getElementById('busca-input').focus();
+            } catch (e) { window.showToast("Falha na Nuvem", "error"); }
+        }
+
+        window.render = function() {
+            if (!operadorAtual) return;
+            const b = document.getElementById('tabela-body'); const isCego = document.getElementById('modo-cego')?.checked;
+            const colSistElements = document.querySelectorAll('.col-sist');
+            colSistElements.forEach(el => el.style.display = isCego ? 'none' : 'table-cell');
+
+            let pT = 0; let financeiro = 0; let html = '';
+            contagens.forEach((i, idx) => {
+                pT += i.fisico; financeiro += (i.dif * i.cmc_unitario);
+                if (idx < 100) {
+                    html += `<tr onclick="editarContagem(${idx})">
+                        <td style="text-align:left;">${i.descricao}</td><td class="col-sist" style="display:${isCego?'none':'table-cell'}">${i.sistema}</td>
+                        <td style="font-weight:bold; color:var(--blue);">${i.fisico}</td>
+                        <td class="col-sist" style="display:${isCego?'none':'table-cell'}; color:${i.dif<0?'var(--red)':i.dif>0?'var(--green)':'inherit'};">${i.dif.toFixed(2)}</td>
+                        <td class="col-sist" style="display:${isCego?'none':'table-cell'}">${i.operador}</td>
+                    </tr>`;
+                }
+            });
+            if (contagens.length > 100) html += `<tr><td colspan="5" style="color:var(--gray); padding:15px;">Mostrando os últimos 100...</td></tr>`;
+            
+            b.innerHTML = html; document.getElementById('dash-skus').innerText = contagens.length; document.getElementById('dash-pecas').innerText = pT.toFixed(2);
+            document.getElementById('dash-financeiro').innerText = isCego ? "🛡️ Oculto" : "R$ " + financeiro.toLocaleString('pt-PT', {minimumFractionDigits: 2});
+            window.atualizarRelatorios();
+        }
+
+        window.mudarAba = function(aba) {
+            document.getElementById('view-auditoria').style.display = aba === 'auditoria' ? 'block' : 'none';
+            document.getElementById('view-relatorios').style.display = aba === 'relatorios' ? 'block' : 'none';
+            document.getElementById('tab-auditoria').className = aba === 'auditoria' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tab-relatorios').className = aba === 'relatorios' ? 'tab-btn active' : 'tab-btn';
+            if (aba === 'relatorios') window.atualizarRelatorios();
+        }
+
+        window.atualizarRelatorios = function() {
+            const totalBase = baseDados.length > 0 ? baseDados.length : contagens.length;
+            const totalContados = contagens.length;
+            let percentagem = totalBase === 0 ? 0 : Math.min(100, Math.round((totalContados / totalBase) * 100));
+            document.getElementById('progresso-texto').innerText = `${totalContados} / ${totalBase} Itens Contados`;
+            document.getElementById('progresso-percentagem').innerText = `${percentagem}%`; document.getElementById('progresso-barra').style.width = `${percentagem}%`;
+
+            let sobraFin = 0, quebraFin = 0; contagens.forEach(i => { const impacto = i.dif * i.cmc_unitario; if (i.dif > 0) sobraFin += impacto; else if (i.dif < 0) quebraFin += Math.abs(impacto); });
+            document.getElementById('rel-sobra-fin').innerText = "R$ " + sobraFin.toLocaleString('pt-PT', {minimumFractionDigits: 2});
+            document.getElementById('rel-quebra-fin').innerText = "R$ " + quebraFin.toLocaleString('pt-PT', {minimumFractionDigits: 2});
+
+            const furosBody = document.getElementById('tabela-furos-body');
+            const topFuros = [...contagens].filter(i => i.dif !== 0).sort((a, b) => Math.abs(b.dif * b.cmc_unitario) - Math.abs(a.dif * a.cmc_unitario)).slice(0, 5);
+            if (topFuros.length === 0) furosBody.innerHTML = `<tr><td colspan="3" style="color:var(--gray); padding:15px;">Sem divergências.</td></tr>`;
+            else furosBody.innerHTML = topFuros.map(i => { const impacto = i.dif * i.cmc_unitario; const cor = impacto > 0 ? 'color: var(--green)' : 'color: var(--red)'; return `<tr><td style="text-align: left; font-size: 10px;">${i.descricao.substring(0, 30)}...</td><td style="font-weight: bold; ${cor}">${i.dif > 0 ? '+'+i.dif : i.dif}</td><td style="font-weight: bold; ${cor}">R$ ${Math.abs(impacto).toLocaleString('pt-PT', {minimumFractionDigits: 2})}</td></tr>`; }).join('');
+
+            const chartContainer = document.getElementById('chart-familias');
+            const familiasObj = {}; contagens.forEach(i => { const fam = i.familia || 'SEM FAMÍLIA'; if (!familiasObj[fam]) familiasObj[fam] = 0; familiasObj[fam] += i.fisico; });
+            const topFamilias = Object.keys(familiasObj).map(k => ({ familia: k, qtd: familiasObj[k] })).sort((a, b) => b.qtd - a.qtd).slice(0, 5);
+            if (topFamilias.length === 0) chartContainer.innerHTML = '<p style="font-size:12px; color:var(--gray); text-align:center; margin: 0;">A aguardar dados...</p>';
+            else { const maxQtd = topFamilias[0].qtd; chartContainer.innerHTML = topFamilias.map(f => { const widthPct = maxQtd > 0 ? (f.qtd / maxQtd) * 100 : 0; return `<div class="chart-row"><div class="chart-label" title="${f.familia}">${f.familia}</div><div class="chart-bar-container"><div class="chart-bar" style="width: ${widthPct}%"></div></div><div class="chart-value">${f.qtd.toLocaleString('pt-PT', {maximumFractionDigits: 2})}</div></div>`; }).join(''); }
+        }
+
+        window.imprimirPDF = function() { document.getElementById('print-data').innerText = "Gerado em: " + new Date().toLocaleString('pt-PT'); window.print(); }
+        window.editarContagem = function(idx) { indexEdicao = idx; window.abrirModal(contagens[idx], false); document.getElementById('m-qtd').value = contagens[idx].fisico; document.getElementById('m-lote').value = contagens[idx].lote || ''; document.getElementById('m-validade').value = contagens[idx].validade || ''; document.getElementById('m-obs').value = contagens[idx].obs || ''; }
+        window.baixarExcel = function(t) { if (contagens.length === 0) return window.showToast("Sem dados.", "warning"); const ws = XLSX.utils.json_to_sheet(t === 'erros' ? contagens.filter(i => i.dif !== 0) : contagens); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Auditoria"); XLSX.writeFile(wb, "Inventario.xlsx"); }
+        
+        window.limparTudo = async function() { 
+            if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
+            if(confirm("APAGAR TUDO DA NUVEM? Ação irreversível para toda a equipa.")) { 
+                window.showToast("A limpar nuvem...", "info");
+                for(const c of contagens) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'contagens', c.id)); }
+                window.addLog("Auditoria limpa", "warning"); 
+            } 
+        }
+
+        window.controlarCamera = async function() {
+            if (!currentUser) return window.showToast("A aguardar ligação à nuvem...", "error");
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const btn = document.getElementById('btn-cam');
+            if (btn.innerText.includes("LIGAR")) {
+                document.getElementById('reader').style.display = "block"; btn.innerText = "🛑 PARAR"; btn.className = "btn-red";
+                if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+                try {
+                    await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, async (txt) => {
+                        if(window.lastScan === txt && Date.now() - window.lastScanTime < 2000) return;
+                        window.lastScan = txt; window.lastScanTime = Date.now();
+                        const cod = txt.trim().toUpperCase(); const itemBase = baseDados.find(i => i.codigo === cod || i.gtin === cod);
+                        const isContinuo = document.getElementById('modo-continuo').checked;
+
+                        if (isContinuo) {
+                            window.playBeep('success'); let itemContado = contagens.find(c => c.codigo === cod || c.gtin === cod);
+                            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
+                            if (itemContado) {
+                                const payload = {...itemContado, fisico: itemContado.fisico + 1, dif: (itemContado.fisico + 1) - itemContado.sistema, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now(), operador: operadorAtual};
+                                await setDoc(doc(colRef, itemContado.id), payload);
+                                window.addLog(`+1 Auto: ${itemContado.descricao}`); window.showToast(`+1 ${itemContado.descricao}`, 'success');
+                            } else {
+                                let novoItem = itemBase || {codigo: cod, gtin: cod, descricao: "PRODUTO DESCONHECIDO", local: "SCAN", sistema: 0, cmc: 0, unidade: "UN"};
+                                const docId = `${novoItem.codigo}_${novoItem.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
+                                const payload = {...novoItem, fisico: 1, dif: 1 - novoItem.sistema, cmc_unitario: novoItem.cmc || 0, lote: "", validade: "", obs: "MODO CONTÍNUO", operador: operadorAtual, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now()};
+                                await setDoc(doc(colRef, docId), payload);
+                                window.addLog(`Novo Auto: ${novoItem.descricao}`); window.showToast(`Adicionado: ${novoItem.descricao}`, 'success');
+                            }
+                        } else {
+                            window.playBeep('success'); window.desligarCam(); indexEdicao = -1; 
+                            let itemModal = itemBase || {codigo: cod, gtin: cod, descricao: "NOVO PRODUTO", local: "SCAN", sistema: 0, cmc: 0, unidade: "UN"};
+                            window.abrirModal(itemModal, itemModal.descricao === "NOVO PRODUTO");
+                        }
+                    });
+                } catch (err) { window.showToast("Falha na câmara.", "error"); window.desligarCam(); }
+            } else { window.desligarCam(); }
+        }
+        
+        window.desligarCam = function() { 
+            const resetUI = () => { document.getElementById('reader').style.display = "none"; document.getElementById('btn-cam').innerText = "📷 LIGAR SCANNER"; document.getElementById('btn-cam').className = "btn-blue"; };
+            if (html5QrCode) { try { const stopPromise = html5QrCode.stop(); if (stopPromise) { stopPromise.then(() => resetUI()).catch(() => resetUI()); } else { resetUI(); } } catch (err) { resetUI(); } } else { resetUI(); }
+        }
+
+        // OUTROS EVENTOS DOM
         document.getElementById('busca-input').oninput = function() {
-            const t = this.value.toUpperCase().trim();
-            const res = document.getElementById('resultados'); res.innerHTML = '';
+            const t = this.value.toUpperCase().trim(); const res = document.getElementById('resultados'); res.innerHTML = '';
             if (t.length < 1) return;
-            const lS = getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
+            const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
             const fil = baseDados.filter(i => (i.descricao.includes(t) || i.codigo.includes(t) || i.gtin.includes(t)) && (lS.length === 0 || lS.includes(i.local)) && (fS.length === 0 || fS.includes(i.familia)));
             if (fil.length > 0) {
                 fil.slice(0, 15).forEach(i => {
-                    const d = document.createElement('div'); d.className = 'item-res';
-                    d.innerHTML = `<strong>${i.descricao}</strong><br><small style="color:var(--gray)">${i.local} | SIST: ${i.sistema}</small>`;
-                    d.onclick = () => { indexEdicao = -1; abrirModal(i, false); }; res.appendChild(d);
+                    const d = document.createElement('div'); d.className = 'item-res'; d.innerHTML = `<strong>${i.descricao}</strong><br><small style="color:var(--gray)">${i.local} | SIST: ${i.sistema}</small>`;
+                    d.onclick = () => { indexEdicao = -1; window.abrirModal(i, false); }; res.appendChild(d);
                 });
             } else {
-                const btnNovo = document.createElement('button'); btnNovo.className = 'btn-blue'; btnNovo.style.marginTop = '10px';
-                btnNovo.innerHTML = `➕ NOVO PRODUTO: "${t}"`;
-                btnNovo.onclick = () => {
-                    indexEdicao = -1; const defLoc = lS.length > 0 ? lS[0] : 'MANUAL';
-                    abrirModal({codigo:'MAN_'+Date.now(), gtin:t, descricao:t, local: defLoc, familia:'MANUAL', sistema:0, cmc:0, unidade:'UN'}, true);
-                }; res.appendChild(btnNovo);
+                const btnNovo = document.createElement('button'); btnNovo.className = 'btn-blue'; btnNovo.style.marginTop = '10px'; btnNovo.innerHTML = `➕ NOVO PRODUTO: "${t}"`;
+                btnNovo.onclick = () => { indexEdicao = -1; window.abrirModal({codigo:'MAN_'+Date.now(), gtin:t, descricao:t, local: lS.length > 0 ? lS[0] : 'MANUAL', familia:'SEM FAMÍLIA', sistema:0, cmc:0, unidade:'UN'}, true); }; res.appendChild(btnNovo);
             }
         };
 
         document.getElementById('file-input').onchange = function(e) {
-            showToast("A processar ficheiro...", "info");
-            const reader = new FileReader();
+            window.showToast("A processar ficheiro...", "info"); const reader = new FileReader();
             reader.onload = function(evt) {
                 try {
                     const workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
                     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
                     let idxCod=-1, idxDesc=-1, idxFam=-1, idxSist=-1, idxLoc=-1, idxCmc=-1, idxUn=-1, idxGtin=-1, hRow=-1;
                     for(let r=0; r<rows.length; r++) {
-                        if(!rows[r]) continue;
-                        let line = rows[r].map(c => String(c || "").toUpperCase().trim());
+                        if(!rows[r]) continue; let line = rows[r].map(c => String(c || "").toUpperCase().trim());
                         if(line.includes("CÓDIGO DO PRODUTO") || line.includes("DESCRIÇÃO DO PRODUTO")) {
-                            hRow = r;
-                            line.forEach((cell, c) => {
+                            hRow = r; line.forEach((cell, c) => {
                                 if(cell.includes("CÓDIGO DO PRODUTO")) idxCod = c; else if(cell.includes("CÓDIGO EAN")) idxGtin = c;
                                 if(cell.includes("DESCRIÇÃO DO PRODUTO")) idxDesc = c; if(cell.includes("FAMÍLIA DE PRODUTO")) idxFam = c;
                                 if(cell === "QUANTIDADE") idxSist = c; if(cell.includes("DESCRIÇÃO DO LOCAL")) idxLoc = c;
@@ -626,252 +747,12 @@
                     }
                     document.getElementById('filtro-local-multi').innerHTML = Array.from(locs).sort().map((l, i) => `<div class="multi-select-item"><input type="checkbox" class="check-l" id="loc-${i}" value="${l}" checked><label for="loc-${i}">${l}</label></div>`).join('');
                     document.getElementById('filtro-familia-multi').innerHTML = Array.from(fams).sort().map((f, i) => `<div class="multi-select-item"><input type="checkbox" class="check-f" id="fam-${i}" value="${f}" checked><label for="fam-${i}">${f}</label></div>`).join('');
-                    addLog("Ficheiro da Omie carregado."); render(); showToast("Ficheiro carregado!", "success");
-                } catch(error) { showToast("Erro no ficheiro", "error"); }
+                    window.showToast("Ficheiro carregado!", "success");
+                } catch(error) { window.showToast("Erro no ficheiro", "error"); }
             }; reader.readAsArrayBuffer(e.target.files[0]);
         };
 
-        document.getElementById('m-validade').oninput = function(e) {
-            const v = e.target.value;
-            document.getElementById('m-venc-alerta-red').style.display = 'none'; document.getElementById('m-venc-alerta-orange').style.display = 'none';
-            if (v) {
-                const dtValid = new Date(v + 'T00:00:00'); const hoje = new Date(); hoje.setHours(0,0,0,0);
-                const diff = Math.ceil((dtValid - hoje) / (1000 * 60 * 60 * 24)); diasParaVencer = diff;
-                if (diff < 0) document.getElementById('m-venc-alerta-red').style.display = 'block';
-                else if (diff <= 30) document.getElementById('m-venc-alerta-orange').style.display = 'block';
-            } else { diasParaVencer = null; }
-        };
-
-        ['m-qtd', 'm-un-edit', 'm-lote', 'm-obs'].forEach(id => { document.getElementById(id).addEventListener('focus', function() { this.select(); }); });
-
-        function abrirModal(item, isNovo) {
-            itemAtual = item; 
-            const isCego = document.getElementById('modo-cego').checked;
-            
-            document.getElementById('m-nome-edit').value = item.descricao; document.getElementById('m-nome-edit').readOnly = !isNovo;
-            document.getElementById('m-un-edit').value = item.unidade; document.getElementById('m-loc-cod').innerText = `📍 ${item.local} | CÓD: ${item.codigo}`;
-            document.getElementById('m-gtin').innerText = "GTIN: " + (item.gtin || "N/A");
-            
-            // Oculta info do sistema se estiver em Contagem Cega
-            document.getElementById('modal-sist-area').style.display = isCego ? 'none' : 'block';
-            document.getElementById('m-sist-val').innerText = `SISTEMA: ${item.sistema} ${item.unidade}`;
-            document.getElementById('m-cmc-val').innerText = `CMC: R$ ${(item.cmc || 0).toFixed(2)}`;
-            
-            if(indexEdicao === -1) {
-                document.getElementById('m-qtd').value = ''; document.getElementById('m-lote').value = '';
-                document.getElementById('m-validade').value = ''; document.getElementById('m-obs').value = '';
-                document.getElementById('m-venc-alerta-red').style.display = 'none'; document.getElementById('m-venc-alerta-orange').style.display = 'none';
-                diasParaVencer = null;
-                const idxAnt = contagens.findIndex(c => c.codigo === item.codigo && c.local === item.local);
-                document.getElementById('m-aviso-dup').style.display = idxAnt !== -1 ? 'block' : 'none';
-                document.getElementById('m-qtd-anterior').innerText = idxAnt !== -1 ? contagens[idxAnt].fisico : '';
-                document.getElementById('btn-salvar-normal').style.display = idxAnt !== -1 ? 'none' : 'block';
-                document.getElementById('botoes-duplicado').style.display = idxAnt !== -1 ? 'flex' : 'none';
-                document.getElementById('btn-excluir-item').style.display = 'none';
-            } else { document.getElementById('btn-excluir-item').style.display = 'block'; }
-            
-            document.getElementById('modal').style.display = "flex"; setTimeout(() => document.getElementById('m-qtd').focus(), 300);
-        }
-
-        function salvarFinal(modo) {
-            esteCalculo(document.getElementById('m-qtd')); // Força o cálculo antes de guardar
-            const qVal = document.getElementById('m-qtd').value; 
-            if (!qVal) return showToast("Digite a Quantidade!", "warning");
-            let novaQtd = parseFloat(qVal);
-            itemAtual.descricao = document.getElementById('m-nome-edit').value.toUpperCase(); itemAtual.unidade = document.getElementById('m-un-edit').value.toUpperCase();
-            
-            let obs = document.getElementById('m-obs').value.toUpperCase();
-            if (diasParaVencer !== null) {
-                if (diasParaVencer < 0) obs = "[VENCIDO] " + obs; else if (diasParaVencer <= 30) obs = `[VENCE EM ${diasParaVencer} DIAS] ` + obs;
-            }
-            
-            const idxAnt = contagens.findIndex(c => c.codigo === itemAtual.codigo && c.local === itemAtual.local);
-            if(indexEdicao !== -1) contagens.splice(indexEdicao, 1);
-            else if(idxAnt !== -1) { if(modo === 'somar') novaQtd += contagens[idxAnt].fisico; contagens.splice(idxAnt, 1); }
-            
-            contagens.unshift({...itemAtual, fisico: novaQtd, dif: novaQtd - itemAtual.sistema, cmc_unitario: itemAtual.cmc || 0, lote: document.getElementById('m-lote').value.toUpperCase(), validade: document.getElementById('m-validade').value, obs: obs, operador: operadorAtual, data: new Date().toLocaleString('pt-PT')});
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(contagens));
-            
-            addLog(`${modo==='somar'?'+':''} Guardado ${novaQtd}x ${itemAtual.descricao}`);
-            document.getElementById('busca-input').value = ''; document.getElementById('resultados').innerHTML = '';
-            fecharModal(); render(); document.getElementById('busca-input').focus();
-        }
-
-        function render() {
-            const b = document.getElementById('tabela-body'); 
-            const isCego = document.getElementById('modo-cego').checked;
-            
-            // Oculta/Mostra colunas dependendo do Modo Cego
-            const colSistElements = document.querySelectorAll('.col-sist');
-            colSistElements.forEach(el => el.style.display = isCego ? 'none' : 'table-cell');
-
-            let pT = 0; let financeiro = 0; let html = '';
-            
-            contagens.forEach((i, idx) => {
-                pT += i.fisico; financeiro += (i.dif * i.cmc_unitario);
-                if (idx < 100) {
-                    html += `<tr onclick="editarContagem(${idx})">
-                        <td style="text-align:left;">${i.descricao}</td>
-                        <td class="col-sist" style="display:${isCego?'none':'table-cell'}">${i.sistema}</td>
-                        <td style="font-weight:bold; color:var(--blue);">${i.fisico}</td>
-                        <td class="col-sist" style="display:${isCego?'none':'table-cell'}; color:${i.dif<0?'var(--red)':i.dif>0?'var(--green)':'inherit'};">${i.dif.toFixed(2)}</td>
-                        <td class="col-sist" style="display:${isCego?'none':'table-cell'}">${i.cmc_unitario.toFixed(2)}</td>
-                    </tr>`;
-                }
-            });
-            if (contagens.length > 100) html += `<tr><td colspan="5" style="color:var(--gray); padding:15px;">Mostrando os últimos 100...</td></tr>`;
-            
-            b.innerHTML = html;
-            document.getElementById('dash-skus').innerText = contagens.length;
-            document.getElementById('dash-pecas').innerText = pT.toFixed(2);
-            document.getElementById('dash-financeiro').innerText = isCego ? "🛡️ Oculto" : "R$ " + financeiro.toLocaleString('pt-PT', {minimumFractionDigits: 2});
-            
-            atualizarRelatorios();
-        }
-
-        function mudarAba(aba) {
-            document.getElementById('view-auditoria').style.display = aba === 'auditoria' ? 'block' : 'none';
-            document.getElementById('view-relatorios').style.display = aba === 'relatorios' ? 'block' : 'none';
-            document.getElementById('tab-auditoria').className = aba === 'auditoria' ? 'tab-btn active' : 'tab-btn';
-            document.getElementById('tab-relatorios').className = aba === 'relatorios' ? 'tab-btn active' : 'tab-btn';
-            if (aba === 'relatorios') atualizarRelatorios();
-        }
-
-        function atualizarRelatorios() {
-            const totalBase = baseDados.length > 0 ? baseDados.length : contagens.length;
-            const totalContados = contagens.length;
-            let percentagem = totalBase === 0 ? 0 : Math.min(100, Math.round((totalContados / totalBase) * 100));
-            document.getElementById('progresso-texto').innerText = `${totalContados} / ${totalBase} Itens Contados`;
-            document.getElementById('progresso-percentagem').innerText = `${percentagem}%`;
-            document.getElementById('progresso-barra').style.width = `${percentagem}%`;
-
-            let sobraFin = 0, quebraFin = 0, sobraQtd = 0, quebraQtd = 0;
-            contagens.forEach(i => {
-                const impacto = i.dif * i.cmc_unitario;
-                if (i.dif > 0) { sobraFin += impacto; sobraQtd += i.dif; } else if (i.dif < 0) { quebraFin += Math.abs(impacto); quebraQtd += Math.abs(i.dif); }
-            });
-
-            document.getElementById('rel-sobra-fin').innerText = "R$ " + sobraFin.toLocaleString('pt-PT', {minimumFractionDigits: 2});
-            document.getElementById('rel-quebra-fin').innerText = "R$ " + quebraFin.toLocaleString('pt-PT', {minimumFractionDigits: 2});
-            document.getElementById('rel-sobra-qtd').innerText = `${sobraQtd.toFixed(2)} Peças`;
-            document.getElementById('rel-quebra-qtd').innerText = `${quebraQtd.toFixed(2)} Peças`;
-
-            const furosBody = document.getElementById('tabela-furos-body');
-            const topFuros = [...contagens].filter(i => i.dif !== 0).sort((a, b) => Math.abs(b.dif * b.cmc_unitario) - Math.abs(a.dif * a.cmc_unitario)).slice(0, 5);
-            if (topFuros.length === 0) furosBody.innerHTML = `<tr><td colspan="3" style="color:var(--gray); padding:15px;">Sem divergências.</td></tr>`;
-            else furosBody.innerHTML = topFuros.map(i => {
-                const impacto = i.dif * i.cmc_unitario; const cor = impacto > 0 ? 'color: var(--green)' : 'color: var(--red)';
-                return `<tr><td style="text-align: left; font-size: 10px;">${i.descricao.substring(0, 30)}...</td><td style="font-weight: bold; ${cor}">${i.dif > 0 ? '+'+i.dif : i.dif}</td><td style="font-weight: bold; ${cor}">R$ ${Math.abs(impacto).toLocaleString('pt-PT', {minimumFractionDigits: 2})}</td></tr>`;
-            }).join('');
-
-            // Tabela de Vencimentos
-            const vencBody = document.getElementById('tabela-vencimentos-body');
-            const hoje = new Date(); hoje.setHours(0,0,0,0);
-            const vencidos = contagens.filter(i => {
-                if(!i.validade) return false;
-                const dt = new Date(i.validade + 'T00:00:00');
-                i._dias = Math.ceil((dt - hoje) / (1000 * 60 * 60 * 24));
-                return i._dias <= 30;
-            }).sort((a,b) => a._dias - b._dias);
-
-            if (vencidos.length === 0) vencBody.innerHTML = `<tr><td colspan="4" style="color:var(--gray); padding:15px;">Nenhum item em alerta.</td></tr>`;
-            else vencBody.innerHTML = vencidos.map(i => {
-                const isVencido = i._dias < 0;
-                return `<tr class="${isVencido ? 'vencido' : 'vence-breve'}">
-                    <td style="text-align:left; font-size:10px;">${i.descricao.substring(0, 25)}</td>
-                    <td>${i.lote || '-'}</td><td>${i.validade.split('-').reverse().join('/')}</td>
-                    <td style="font-weight:bold;">${isVencido ? 'VENCIDO' : i._dias + ' dias'}</td>
-                </tr>`;
-            }).join('');
-
-            const chartContainer = document.getElementById('chart-familias');
-            const familiasObj = {};
-            contagens.forEach(i => { const fam = i.familia || 'SEM FAMÍLIA'; if (!familiasObj[fam]) familiasObj[fam] = 0; familiasObj[fam] += i.fisico; });
-            const topFamilias = Object.keys(familiasObj).map(k => ({ familia: k, qtd: familiasObj[k] })).sort((a, b) => b.qtd - a.qtd).slice(0, 5);
-            if (topFamilias.length === 0) chartContainer.innerHTML = '<p style="font-size:12px; color:var(--gray); text-align:center; margin: 0;">A aguardar dados...</p>';
-            else {
-                const maxQtd = topFamilias[0].qtd;
-                chartContainer.innerHTML = topFamilias.map(f => {
-                    const widthPct = maxQtd > 0 ? (f.qtd / maxQtd) * 100 : 0;
-                    return `<div class="chart-row"><div class="chart-label" title="${f.familia}">${f.familia}</div><div class="chart-bar-container"><div class="chart-bar" style="width: ${widthPct}%"></div></div><div class="chart-value">${f.qtd.toLocaleString('pt-PT', {maximumFractionDigits: 2})}</div></div>`;
-                }).join('');
-            }
-        }
-
-        function imprimirPDF() {
-            document.getElementById('print-data').innerText = "Gerado em: " + new Date().toLocaleString('pt-PT');
-            window.print();
-        }
-
-        function fecharModal() { document.getElementById('modal').style.display = "none"; indexEdicao = -1; diasParaVencer = null; }
-        
-        function editarContagem(idx) { 
-            indexEdicao = idx; abrirModal(contagens[idx], false); 
-            document.getElementById('m-qtd').value = contagens[idx].fisico; document.getElementById('m-lote').value = contagens[idx].lote || ''; 
-            document.getElementById('m-validade').value = contagens[idx].validade || ''; document.getElementById('m-obs').value = contagens[idx].obs || ''; 
-        }
-        
-        function baixarExcel(t) { 
-            if (contagens.length === 0) return showToast("Sem dados.", "warning");
-            const ws = XLSX.utils.json_to_sheet(t === 'erros' ? contagens.filter(i => i.dif !== 0) : contagens); 
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Auditoria"); 
-            XLSX.writeFile(wb, "Inventario.xlsx"); 
-        }
-        
-        function limparTudo() { 
-            if(confirm("LIMPAR TUDO? Ação irreversível.")) { 
-                localStorage.removeItem(STORAGE_KEY); contagens = []; logAcoes = [];
-                addLog("Auditoria reiniciada", "warning"); render(); 
-            } 
-        }
-        
-        async function controlarCamera() {
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-            const btn = document.getElementById('btn-cam');
-            if (btn.innerText.includes("LIGAR")) {
-                document.getElementById('reader').style.display = "block"; btn.innerText = "🛑 PARAR"; btn.className = "btn-red";
-                if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
-                try {
-                    await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => {
-                        if(window.lastScan === txt && Date.now() - window.lastScanTime < 2000) return;
-                        window.lastScan = txt; window.lastScanTime = Date.now();
-                        const cod = txt.trim().toUpperCase(); const itemBase = baseDados.find(i => i.codigo === cod || i.gtin === cod);
-                        const isContinuo = document.getElementById('modo-continuo').checked;
-
-                        if (isContinuo) {
-                            playBeep('success'); let itemContado = contagens.find(c => c.codigo === cod || c.gtin === cod);
-                            if (itemContado) {
-                                itemContado.fisico += 1; itemContado.dif = itemContado.fisico - itemContado.sistema; itemContado.data = new Date().toLocaleString('pt-PT'); itemContado.operador = operadorAtual;
-                                contagens = contagens.filter(c => c !== itemContado); contagens.unshift(itemContado);
-                                addLog(`+1 Auto: ${itemContado.descricao}`); showToast(`+1 ${itemContado.descricao}`, 'success');
-                            } else {
-                                let novoItem = itemBase || {codigo: cod, gtin: cod, descricao: "PRODUTO DESCONHECIDO", local: "SCAN", sistema: 0, cmc: 0, unidade: "UN"};
-                                contagens.unshift({...novoItem, fisico: 1, dif: 1 - novoItem.sistema, cmc_unitario: novoItem.cmc || 0, lote: "", validade: "", obs: "MODO CONTÍNUO", operador: operadorAtual, data: new Date().toLocaleString('pt-PT')});
-                                addLog(`Novo Auto: ${novoItem.descricao}`); showToast(`Adicionado: ${novoItem.descricao}`, 'success');
-                            }
-                            localStorage.setItem(STORAGE_KEY, JSON.stringify(contagens)); render();
-                        } else {
-                            playBeep('success'); desligarCam(); indexEdicao = -1; 
-                            let itemModal = itemBase || {codigo: cod, gtin: cod, descricao: "NOVO PRODUTO", local: "SCAN", sistema: 0, cmc: 0, unidade: "UN"};
-                            abrirModal(itemModal, itemModal.descricao === "NOVO PRODUTO");
-                        }
-                    });
-                } catch (err) { showToast("Não foi possível aceder à câmara.", "error"); desligarCam(); }
-            } else { desligarCam(); }
-        }
-        
-        function desligarCam() { 
-            const resetUI = () => { document.getElementById('reader').style.display = "none"; document.getElementById('btn-cam').innerText = "📷 LIGAR SCANNER"; document.getElementById('btn-cam').className = "btn-blue"; };
-            if (html5QrCode) { 
-                try {
-                    const stopPromise = html5QrCode.stop();
-                    if (stopPromise) { stopPromise.then(() => resetUI()).catch(() => resetUI()); } else { resetUI(); }
-                } catch (err) { resetUI(); }
-            } else { resetUI(); }
-        }
-        
-        checkLogin();
-        render();
+        window.checkLogin();
     </script>
 </body>
 </html>
