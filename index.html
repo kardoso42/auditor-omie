@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auditor Omie V-31.0 - Premium</title>
+    <title>Auditor Estoque V-31.0 - Premium</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -52,12 +52,14 @@
         .app-header h2 { margin: 0; color: var(--blue-dark); font-weight: 700; font-size: 22px; letter-spacing: -0.5px; }
         .app-header p { margin: 4px 0 0; font-size: 12px; color: var(--gray); font-weight: 500; }
         
-        #btn-theme {
-            position: absolute; right: 0; top: 0; width: 40px; height: 40px; padding: 0; 
+        .header-actions { position: absolute; right: 0; top: 0; display: flex; gap: 8px; }
+        #btn-theme, #btn-config {
+            width: 40px; height: 40px; padding: 0; 
             border-radius: 50%; background: var(--surface); border: 1px solid var(--border); 
             font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); color: var(--text);
-            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;
         }
+        #btn-theme:hover, #btn-config:hover { background: var(--border); }
 
         .card { 
             background: var(--surface); padding: 20px; border-radius: 16px; 
@@ -117,8 +119,6 @@
         .item-res { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; padding: 15px; cursor: pointer; text-align: left; background: var(--surface); transition: all 0.2s; }
         .item-res strong { display: block; color: var(--blue-dark); margin-bottom: 4px; font-size: 13px; }
         
-        .toggle-box { background: var(--bg); padding: 14px 16px; border-radius: 10px; margin-top: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; color: var(--blue-dark); border: 1px solid var(--border); }
-        
         .switch-container { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); padding: 14px 16px; border-radius: 10px; margin-top: 10px; }
         .switch-container label { font-size: 12px; font-weight: 600; color: var(--text); }
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
@@ -169,6 +169,11 @@
         .log-time { color: var(--gray); font-weight: 600; width: 60px; }
         .log-msg { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+        /* Tela de Login */
+        #view-login { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85vh; }
+        .login-card { background: var(--surface); padding: 30px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); border: 1px solid var(--border); width: 100%; max-width: 350px; text-align: center; }
+        .user-badge { background: var(--blue); color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; }
+
         /* Estilos de Impressão (PDF) */
         .print-only { display: none; }
         @media print {
@@ -186,172 +191,189 @@
 </head>
 <body>
 
-    <div class="app-header">
-        <h2>Auditor Omie</h2>
-        <p>Gestão de Inventário</p>
-        <button onclick="toggleDarkMode()" id="btn-theme">🌙</button>
-    </div>
-
-    <div class="tabs">
-        <button class="tab-btn active" id="tab-auditoria" onclick="mudarAba('auditoria')">🔍 Auditoria</button>
-        <button class="tab-btn" id="tab-relatorios" onclick="mudarAba('relatorios')">📊 Relatórios</button>
-    </div>
-
-    <!-- ECRÃ DE AUDITORIA (Principal) -->
-    <div id="view-auditoria">
-        <div class="dash-container print-hide">
-            <div class="dash-card"><h4>Itens</h4><p id="dash-skus">0</p></div>
-            <div class="dash-card"><h4>Peças</h4><p id="dash-pecas">0</p></div>
-            <div class="dash-card" style="grid-column: span 2; border-top-color: var(--orange);">
-                <h4>Divergência Financeira</h4><p id="dash-financeiro">R$ 0,00</p>
-            </div>
-        </div>
-
-        <div class="card print-hide">
-            <label style="font-size: 11px; font-weight: bold;">1. FOLHA DE CÁLCULO (OMIE):</label>
-            <input type="file" id="file-input" accept=".xlsx, .xls, .csv">
-            
-            <div class="toggle-box" onclick="toggleFiltros()">
-                <span>⚙️ FILTROS, PENDENTES E BACKUP</span>
-                <span id="icon-toggle">▲</span>
-            </div>
-
-            <div id="area-filtros" style="display: block;">
-                <div style="margin-top: 10px;">
-                    <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📍 LOCAIS:</label>
-                    <div id="filtro-local-multi" class="multi-select-box"><small style="color:var(--gray); padding: 5px;">A aguardar ficheiro...</small></div>
-                </div>
-
-                <div style="margin-top: 10px;">
-                    <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📂 FAMÍLIAS:</label>
-                    <div id="filtro-familia-multi" class="multi-select-box"><small style="color:var(--gray); padding: 5px;">A aguardar ficheiro...</small></div>
-                </div>
-
-                <div class="grid-buttons">
-                    <button class="btn-outline" onclick="exportarBackup()">💾 BACKUP</button>
-                    <button class="btn-outline" onclick="document.getElementById('import-backup').click()">📥 RESTAURAR</button>
-                    <input type="file" id="import-backup" style="display:none" onchange="importarBackup(event)">
-                    <button class="btn-outline" style="border-color: var(--orange); color: var(--orange);" onclick="verPendentes()">🔍 PENDENTES</button>
-                    <button class="btn-outline" style="border-color: var(--red); color: var(--red);" onclick="zerarNaoContados()">⚠️ ZERAR RESTANTES</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="card print-hide">
-            <button id="btn-cam" class="btn-blue" onclick="controlarCamera()">📷 LIGAR SCANNER</button>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="switch-container">
-                    <label for="modo-continuo">Modo Contínuo (+1 Auto)</label>
-                    <label class="switch"><input type="checkbox" id="modo-continuo"><span class="slider"></span></label>
-                </div>
-                <div class="switch-container">
-                    <label for="modo-cego">Modo Cego (Ocultar Sist)</label>
-                    <label class="switch"><input type="checkbox" id="modo-cego" onchange="render()"><span class="slider"></span></label>
-                </div>
-            </div>
-
-            <div id="reader" style="display:none; width:100%; margin-top:10px;"></div>
-            <input type="text" id="busca-input" style="margin-top:10px; border: 2px solid var(--blue-dark);" placeholder="PESQUISAR NOME OU GTIN...">
-            <div id="resultados" style="max-height: 250px; overflow-y: auto;"></div>
-        </div>
-
-        <!-- Log Cronológico -->
-        <div class="card print-hide" style="padding: 12px 20px;">
-            <h4 style="margin: 0 0 8px 0; font-size: 11px; color: var(--gray); text-transform: uppercase;">🕒 Histórico de Ações</h4>
-            <div id="log-container">
-                <div style="font-size:11px; color:var(--gray);">A aguardar contagens...</div>
-            </div>
-        </div>
-
-        <div class="card print-hide">
-            <div style="display:flex; gap:5px;">
-                <button class="btn-green" onclick="baixarExcel('tudo')">📥 EXPORTAR TUDO</button>
-                <button class="btn-blue" onclick="baixarExcel('erros')">🚫 SÓ ERROS</button>
-            </div>
-            <div style="overflow-x: auto;">
-                <table id="tabela">
-                    <thead><tr><th>Produto</th><th class="col-sist">Sist</th><th>Fis</th><th class="col-sist">Dif</th><th class="col-sist">CMC</th></tr></thead>
-                    <tbody id="tabela-body"></tbody>
-                </table>
-            </div>
-            <button onclick="limparTudo()" style="margin-top:20px; color:var(--red); background:none; font-size:10px; border:none; width:100%;">🗑️ LIMPAR AUDITORIA</button>
+    <!-- TELA DE LOGIN -->
+    <div id="view-login">
+        <div class="login-card">
+            <h2 style="color: var(--blue-dark); margin-top: 0; font-size: 24px;">Auditor Estoque</h2>
+            <p style="color: var(--gray); font-size: 13px; margin-bottom: 25px;">Identifique-se para iniciar a contagem e registar as suas auditorias.</p>
+            <input type="text" id="login-nome" placeholder="Seu Nome ou Matrícula" style="margin-bottom: 15px; text-align: center; font-weight: bold;">
+            <button class="btn-blue" onclick="fazerLogin()">Entrar no Sistema</button>
         </div>
     </div>
 
-    <!-- ECRÃ DE RELATÓRIOS -->
-    <div id="view-relatorios" style="display: none;">
-        <h2 class="print-only" style="text-align: center; margin-bottom: 20px;">Relatório de Auditoria de Inventário</h2>
-        <p class="print-only" style="text-align: center; font-size: 12px; margin-top:-15px;" id="print-data"></p>
-
-        <div class="card">
-            <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Progresso da Auditoria</h3>
-            <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600;">
-                <span id="progresso-texto">0 / 0 Itens Contados</span>
-                <span id="progresso-percentagem">0%</span>
+    <!-- APLICAÇÃO PRINCIPAL -->
+    <div id="view-app" style="display:none;">
+        <div class="app-header">
+            <h2>Auditor Estoque</h2>
+            <p>Gestão de Inventário</p>
+            <div class="print-hide">
+                <span class="user-badge">👤 <span id="lbl-operador">Operador</span> <button onclick="fazerLogout()" style="background:none; border:none; color:rgba(255,255,255,0.7); padding:0; margin-left:8px; cursor:pointer; font-size:10px; font-weight:bold;">SAIR</button></span>
             </div>
-            <div class="progress-container print-hide">
-                <div class="progress-bar" id="progresso-barra"></div>
+            <div class="header-actions print-hide">
+                <button onclick="abrirModalConfig()" id="btn-config" title="Configurações e Filtros">⚙️</button>
+                <button onclick="toggleDarkMode()" id="btn-theme" title="Alternar Tema">🌙</button>
             </div>
         </div>
 
-        <div class="card">
-            <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Impacto Financeiro Global</h3>
-            <div class="report-grid">
-                <div class="report-card green">
-                    <h5>Sobra (Positivo)</h5>
-                    <p id="rel-sobra-fin">R$ 0,00</p>
-                    <small id="rel-sobra-qtd" style="font-size: 10px; color: var(--gray); margin-top: 5px;">0 Peças</small>
-                </div>
-                <div class="report-card red">
-                    <h5>Quebra (Negativo)</h5>
-                    <p id="rel-quebra-fin">R$ 0,00</p>
-                    <small id="rel-quebra-qtd" style="font-size: 10px; color: var(--gray); margin-top: 5px;">0 Peças</small>
+        <div class="tabs print-hide">
+            <button class="tab-btn active" id="tab-auditoria" onclick="mudarAba('auditoria')">🔍 Auditoria</button>
+            <button class="tab-btn" id="tab-relatorios" onclick="mudarAba('relatorios')">📊 Relatórios</button>
+        </div>
+
+        <!-- ECRÃ DE AUDITORIA -->
+        <div id="view-auditoria">
+            <div class="dash-container print-hide">
+                <div class="dash-card"><h4>Itens</h4><p id="dash-skus">0</p></div>
+                <div class="dash-card"><h4>Peças</h4><p id="dash-pecas">0</p></div>
+                <div class="dash-card" style="grid-column: span 2; border-top-color: var(--orange);">
+                    <h4>Divergência Financeira</h4><p id="dash-financeiro">R$ 0,00</p>
                 </div>
             </div>
-        </div>
 
-        <div class="card">
-            <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Top 5 Maiores Furos (Valores Absolutos)</h3>
-            <div style="overflow-x: auto;">
-                <table id="tabela-top-furos">
-                    <thead><tr><th>Produto</th><th>Dif</th><th>Impacto</th></tr></thead>
-                    <tbody id="tabela-furos-body">
-                        <tr><td colspan="3">A aguardar dados...</td></tr>
-                    </tbody>
-                </table>
+            <div class="card print-hide">
+                <button id="btn-cam" class="btn-blue" onclick="controlarCamera()">📷 LIGAR SCANNER</button>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                    <div class="switch-container" style="margin-top: 0;">
+                        <label for="modo-continuo">Modo Contínuo (+1 Auto)</label>
+                        <label class="switch"><input type="checkbox" id="modo-continuo"><span class="slider"></span></label>
+                    </div>
+                    <div class="switch-container" style="margin-top: 0;">
+                        <label for="modo-cego">Modo Cego (Ocultar Sist)</label>
+                        <label class="switch"><input type="checkbox" id="modo-cego" onchange="render()"><span class="slider"></span></label>
+                    </div>
+                </div>
+
+                <div id="reader" style="display:none; width:100%; margin-top:10px;"></div>
+                <input type="text" id="busca-input" style="margin-top:10px; border: 2px solid var(--blue-dark);" placeholder="PESQUISAR NOME OU GTIN...">
+                <div id="resultados" style="max-height: 250px; overflow-y: auto;"></div>
+            </div>
+
+            <!-- Log Cronológico -->
+            <div class="card print-hide" style="padding: 12px 20px;">
+                <h4 style="margin: 0 0 8px 0; font-size: 11px; color: var(--gray); text-transform: uppercase;">🕒 Histórico de Ações</h4>
+                <div id="log-container">
+                    <div style="font-size:11px; color:var(--gray);">A aguardar contagens...</div>
+                </div>
+            </div>
+
+            <div class="card print-hide">
+                <div style="display:flex; gap:5px;">
+                    <button class="btn-green" onclick="baixarExcel('tudo')">📥 EXPORTAR TUDO</button>
+                    <button class="btn-blue" onclick="baixarExcel('erros')">🚫 SÓ ERROS</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="tabela">
+                        <thead><tr><th>Produto</th><th class="col-sist">Sist</th><th>Fis</th><th class="col-sist">Dif</th><th class="col-sist">CMC</th></tr></thead>
+                        <tbody id="tabela-body"></tbody>
+                    </table>
+                </div>
+                <button onclick="limparTudo()" style="margin-top:20px; color:var(--red); background:none; font-size:10px; border:none; width:100%;">🗑️ LIMPAR AUDITORIA</button>
             </div>
         </div>
 
-        <div class="card">
-            <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Alerta de Validades (Próx. 30 Dias)</h3>
-            <div style="overflow-x: auto;">
-                <table id="tabela-vencimentos">
-                    <thead><tr><th>Produto</th><th>Lote</th><th>Validade</th><th>Status</th></tr></thead>
-                    <tbody id="tabela-vencimentos-body">
-                        <tr><td colspan="4">Nenhum item em alerta.</td></tr>
-                    </tbody>
-                </table>
+        <!-- ECRÃ DE RELATÓRIOS -->
+        <div id="view-relatorios" style="display: none;">
+            <h2 class="print-only" style="text-align: center; margin-bottom: 20px;">Relatório de Auditoria de Inventário</h2>
+            <p class="print-only" style="text-align: center; font-size: 12px; margin-top:-15px;" id="print-data"></p>
+
+            <div class="card">
+                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Progresso da Auditoria</h3>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600;">
+                    <span id="progresso-texto">0 / 0 Itens Contados</span>
+                    <span id="progresso-percentagem">0%</span>
+                </div>
+                <div class="progress-container print-hide">
+                    <div class="progress-bar" id="progresso-barra"></div>
+                </div>
             </div>
-        </div>
 
-        <div class="card print-hide">
-            <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Top Famílias (Peças Contadas)</h3>
-            <div id="chart-familias" style="margin-top: 15px;">
-                <p style="font-size:12px; color:var(--gray); text-align:center; margin: 0;">A aguardar dados...</p>
+            <div class="card">
+                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Impacto Financeiro Global</h3>
+                <div class="report-grid">
+                    <div class="report-card green">
+                        <h5>Sobra (Positivo)</h5>
+                        <p id="rel-sobra-fin">R$ 0,00</p>
+                        <small id="rel-sobra-qtd" style="font-size: 10px; color: var(--gray); margin-top: 5px;">0 Peças</small>
+                    </div>
+                    <div class="report-card red">
+                        <h5>Quebra (Negativo)</h5>
+                        <p id="rel-quebra-fin">R$ 0,00</p>
+                        <small id="rel-quebra-qtd" style="font-size: 10px; color: var(--gray); margin-top: 5px;">0 Peças</small>
+                    </div>
+                </div>
             </div>
+
+            <div class="card">
+                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Top 5 Maiores Furos (Valores Absolutos)</h3>
+                <div style="overflow-x: auto;">
+                    <table id="tabela-top-furos">
+                        <thead><tr><th>Produto</th><th>Dif</th><th>Impacto</th></tr></thead>
+                        <tbody id="tabela-furos-body">
+                            <tr><td colspan="3">A aguardar dados...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Alerta de Validades (Próx. 30 Dias)</h3>
+                <div style="overflow-x: auto;">
+                    <table id="tabela-vencimentos">
+                        <thead><tr><th>Produto</th><th>Lote</th><th>Validade</th><th>Status</th></tr></thead>
+                        <tbody id="tabela-vencimentos-body">
+                            <tr><td colspan="4">Nenhum item em alerta.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card print-hide">
+                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Top Famílias (Peças Contadas)</h3>
+                <div id="chart-familias" style="margin-top: 15px;">
+                    <p style="font-size:12px; color:var(--gray); text-align:center; margin: 0;">A aguardar dados...</p>
+                </div>
+            </div>
+
+            <div class="print-only signature-block">
+                <div class="signature-line">Assinatura do Auditor</div>
+                <div class="signature-line">Assinatura do Gestor / Responsável</div>
+            </div>
+
+            <button class="btn-blue print-hide" onclick="imprimirPDF()" style="margin-top: 10px;">📄 GERAR RELATÓRIO PDF</button>
         </div>
 
-        <div class="print-only signature-block">
-            <div class="signature-line">Assinatura do Auditor</div>
-            <div class="signature-line">Assinatura do Gestor / Responsável</div>
-        </div>
-
-        <button class="btn-blue print-hide" onclick="imprimirPDF()" style="margin-top: 10px;">📄 GERAR RELATÓRIO PDF</button>
-    </div>
+    </div> <!-- FIM DO VIEW-APP -->
 
     <div id="toast-container"></div>
 
+    <!-- Modal de Importação e Filtros -->
+    <div id="modal-config" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; font-size: 16px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;">⚙️ Importação e Filtros</h3>
+            
+            <label style="font-size: 11px; font-weight: bold;">1. FOLHA DE CÁLCULO (OMIE):</label>
+            <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="margin-bottom: 15px;">
+            
+            <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📍 LOCAIS (MARCAR/DESMARCAR):</label>
+            <div id="filtro-local-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">A aguardar ficheiro...</small></div>
+
+            <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📂 FAMÍLIAS (MARCAR/DESMARCAR):</label>
+            <div id="filtro-familia-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">A aguardar ficheiro...</small></div>
+
+            <div class="grid-buttons">
+                <button class="btn-outline" onclick="exportarBackup()">💾 BACKUP</button>
+                <button class="btn-outline" onclick="document.getElementById('import-backup').click()">📥 RESTAURAR</button>
+                <input type="file" id="import-backup" style="display:none" onchange="importarBackup(event)">
+                <button class="btn-outline" style="border-color: var(--orange); color: var(--orange);" onclick="verPendentes()">🔍 PENDENTES</button>
+                <button class="btn-outline" style="border-color: var(--red); color: var(--red);" onclick="zerarNaoContados()">⚠️ ZERAR RESTANTES</button>
+            </div>
+            
+            <button onclick="fecharModalConfig()" style="background:var(--bg); color:var(--text); margin-top:20px; border:1px solid var(--border); width:100%; border-radius:10px; padding: 14px; font-weight:bold; cursor:pointer; text-transform: uppercase;">Fechar Menu</button>
+        </div>
+    </div>
+
+    <!-- Modal de Contagem -->
     <div id="modal" class="modal">
         <div class="modal-content">
             <div id="m-aviso-dup" style="display:none; background:#fef08a; color:#854d0e; padding:10px; border-radius:8px; margin-bottom:10px; text-align:center; font-weight:bold;">⚠️ JÁ CONTADO: <span id="m-qtd-anterior">0</span></div>
@@ -366,7 +388,6 @@
                 </div>
             </div>
             <div style="display:flex; gap:10px; margin-bottom:10px;">
-                <!-- O input mode="text" permite inserir fórmulas matemáticas (ex: 3*12+4) -->
                 <div style="flex:1">
                     <label style="font-size:11px; font-weight:bold;">QTD FÍSICA (ACEITA CÁLCULOS):</label>
                     <input type="text" id="m-qtd" inputmode="text" placeholder="Ex: 3*12+4" onblur="esteCalculo(this)" style="font-size:20px; font-weight:bold; border:2px solid var(--blue);">
@@ -396,7 +417,38 @@
         let contagens = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
         let logAcoes = [];
         let itemAtual = null; let indexEdicao = -1; let html5QrCode = null; let diasParaVencer = null;
+        let operadorAtual = localStorage.getItem('operador_atual') || '';
         
+        // --- SISTEMA DE LOGIN ---
+        function checkLogin() {
+            if (operadorAtual) {
+                document.getElementById('view-login').style.display = 'none';
+                document.getElementById('view-app').style.display = 'block';
+                document.getElementById('lbl-operador').innerText = operadorAtual;
+            } else {
+                document.getElementById('view-login').style.display = 'flex';
+                document.getElementById('view-app').style.display = 'none';
+            }
+        }
+        
+        function fazerLogin() {
+            const nome = document.getElementById('login-nome').value.trim().toUpperCase();
+            if (!nome) return showToast('Digite o seu nome ou matrícula!', 'warning');
+            operadorAtual = nome;
+            localStorage.setItem('operador_atual', operadorAtual);
+            checkLogin();
+            showToast(`Sessão iniciada como ${operadorAtual}`, 'success');
+        }
+        
+        function fazerLogout() {
+            if(confirm("Deseja sair da sessão atual?")) {
+                operadorAtual = '';
+                localStorage.removeItem('operador_atual');
+                document.getElementById('login-nome').value = '';
+                checkLogin();
+            }
+        }
+
         // --- MODO ESCURO ---
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
@@ -456,11 +508,12 @@
             }
         }
 
-        function toggleFiltros() {
-            const area = document.getElementById('area-filtros');
-            const icon = document.getElementById('icon-toggle');
-            if (area.style.display === 'none') { area.style.display = 'block'; icon.innerText = '▲'; } 
-            else { area.style.display = 'none'; icon.innerText = '▼'; }
+        function abrirModalConfig() {
+            document.getElementById('modal-config').style.display = "flex";
+        }
+
+        function fecharModalConfig() {
+            document.getElementById('modal-config').style.display = "none";
         }
 
         function exportarBackup() {
@@ -476,6 +529,7 @@
                 contagens = JSON.parse(e.target.result); 
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(contagens)); 
                 render(); addLog("Backup restaurado"); showToast("Restaurado!", "success"); 
+                fecharModalConfig();
             };
             reader.readAsText(event.target.files[0]);
         }
@@ -494,6 +548,7 @@
                 d.onclick = () => { indexEdicao = -1; abrirModal(i, false); }; res.appendChild(d); 
             });
             document.getElementById('busca-input').value = '';
+            fecharModalConfig();
         }
 
         function zerarNaoContados() {
@@ -505,6 +560,7 @@
                 pendentes.forEach(i => { contagens.push({...i, fisico: 0, dif: 0 - i.sistema, cmc_unitario: i.cmc || 0, lote: "", validade: "", obs: "NÃO ENCONTRADO", data: new Date().toLocaleString('pt-PT')}); });
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(contagens)); render(); 
                 addLog(`Zeradados ${pendentes.length} itens não contados.`); showToast("Itens zerados!", "success");
+                fecharModalConfig();
             }
         }
 
@@ -633,7 +689,7 @@
             if(indexEdicao !== -1) contagens.splice(indexEdicao, 1);
             else if(idxAnt !== -1) { if(modo === 'somar') novaQtd += contagens[idxAnt].fisico; contagens.splice(idxAnt, 1); }
             
-            contagens.unshift({...itemAtual, fisico: novaQtd, dif: novaQtd - itemAtual.sistema, cmc_unitario: itemAtual.cmc || 0, lote: document.getElementById('m-lote').value.toUpperCase(), validade: document.getElementById('m-validade').value, obs: obs, data: new Date().toLocaleString('pt-PT')});
+            contagens.unshift({...itemAtual, fisico: novaQtd, dif: novaQtd - itemAtual.sistema, cmc_unitario: itemAtual.cmc || 0, lote: document.getElementById('m-lote').value.toUpperCase(), validade: document.getElementById('m-validade').value, obs: obs, operador: operadorAtual, data: new Date().toLocaleString('pt-PT')});
             localStorage.setItem(STORAGE_KEY, JSON.stringify(contagens));
             
             addLog(`${modo==='somar'?'+':''} Guardado ${novaQtd}x ${itemAtual.descricao}`);
@@ -785,12 +841,12 @@
                         if (isContinuo) {
                             playBeep('success'); let itemContado = contagens.find(c => c.codigo === cod || c.gtin === cod);
                             if (itemContado) {
-                                itemContado.fisico += 1; itemContado.dif = itemContado.fisico - itemContado.sistema; itemContado.data = new Date().toLocaleString('pt-PT');
+                                itemContado.fisico += 1; itemContado.dif = itemContado.fisico - itemContado.sistema; itemContado.data = new Date().toLocaleString('pt-PT'); itemContado.operador = operadorAtual;
                                 contagens = contagens.filter(c => c !== itemContado); contagens.unshift(itemContado);
                                 addLog(`+1 Auto: ${itemContado.descricao}`); showToast(`+1 ${itemContado.descricao}`, 'success');
                             } else {
                                 let novoItem = itemBase || {codigo: cod, gtin: cod, descricao: "PRODUTO DESCONHECIDO", local: "SCAN", sistema: 0, cmc: 0, unidade: "UN"};
-                                contagens.unshift({...novoItem, fisico: 1, dif: 1 - novoItem.sistema, cmc_unitario: novoItem.cmc || 0, lote: "", validade: "", obs: "MODO CONTÍNUO", data: new Date().toLocaleString('pt-PT')});
+                                contagens.unshift({...novoItem, fisico: 1, dif: 1 - novoItem.sistema, cmc_unitario: novoItem.cmc || 0, lote: "", validade: "", obs: "MODO CONTÍNUO", operador: operadorAtual, data: new Date().toLocaleString('pt-PT')});
                                 addLog(`Novo Auto: ${novoItem.descricao}`); showToast(`Adicionado: ${novoItem.descricao}`, 'success');
                             }
                             localStorage.setItem(STORAGE_KEY, JSON.stringify(contagens)); render();
@@ -814,6 +870,7 @@
             } else { resetUI(); }
         }
         
+        checkLogin();
         render();
     </script>
 </body>
