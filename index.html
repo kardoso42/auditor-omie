@@ -441,7 +441,10 @@
                 } else {
                     await signInAnonymously(auth);
                 }
-            } catch(e) { console.warn("Erro Auth. Configuração Firebase necessária."); }
+            } catch(e) { 
+                console.error("Erro Auth:", e);
+                window.showToast("Erro de Autenticação: " + e.message, "error");
+            }
         };
         initAuth();
 
