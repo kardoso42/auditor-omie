@@ -176,7 +176,7 @@
             </select>
 
             <div id="pin-area" style="display: none; margin-bottom: 12px;">
-                <input type="password" id="login-pin" placeholder="PIN de Acesso do Chefe" style="text-align: center; font-weight: bold; border: 1.5px solid var(--orange);">
+                <input type="password" id="login-pin" inputmode="numeric" pattern="[0-9]*" placeholder="PIN de Acesso do Chefe" style="text-align: center; font-weight: bold; border: 1.5px solid var(--orange);">
             </div>
 
             <button class="btn-blue" onclick="fazerLogin()">Entrar no Sistema</button>
@@ -368,7 +368,7 @@
             <div style="display:flex; gap:10px; margin-bottom:10px;">
                 <div style="flex:1">
                     <label style="font-size:11px; font-weight:bold;">QTD FÍSICA (ACEITA CÁLCULOS):</label>
-                    <input type="text" id="m-qtd" inputmode="text" placeholder="Ex: 3*12+4" onblur="esteCalculo(this)" style="font-size:20px; font-weight:bold; border:2px solid var(--blue);">
+                    <input type="text" id="m-qtd" inputmode="decimal" placeholder="Ex: 3*12+4" onblur="esteCalculo(this)" style="font-size:20px; font-weight:bold; border:2px solid var(--blue);">
                 </div>
                 <div style="width:75px"><label style="font-size:11px; font-weight:bold;">UN:</label><input type="text" id="m-un-edit"></div>
             </div>
@@ -652,8 +652,14 @@
             
             if(indexEdicao === -1) {
                 document.getElementById('m-qtd').value = ''; document.getElementById('m-lote').value = '';
-                document.getElementById('m-validade').value = ''; document.getElementById('m-obs').value = '';
-                document.getElementById('m-venc-alerta-red').style.display = 'none'; document.getElementById('m-venc-alerta-orange').style.display = 'none';
+                document.getElementById('m-validade').value = ''; 
+                
+                // Redefinir visibilidade de avisos de validade
+                const alertRed = document.getElementById('m-venc-alerta-red');
+                const alertOrange = document.getElementById('m-venc-alerta-orange');
+                if (alertRed) alertRed.style.display = 'none';
+                if (alertOrange) alertOrange.style.display = 'none';
+                
                 const idxAnt = contagens.findIndex(c => c.codigo === item.codigo && c.local === item.local);
                 document.getElementById('m-aviso-dup').style.display = idxAnt !== -1 ? 'block' : 'none';
                 document.getElementById('m-qtd-anterior').innerText = idxAnt !== -1 ? contagens[idxAnt].fisico : '';
@@ -783,9 +789,10 @@
                 // Limpa contagens
                 for(const c of contagens) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'contagens', c.id)); }
                 // Limpa catálogo
+                const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
                 for(const b of baseDados) {
                     const docId = `${b.codigo}_${b.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'catalogo', docId));
+                    await deleteDoc(doc(colRefCatalog, docId));
                 }
                 window.addLog("Auditoria limpa e reiniciada", "warning"); 
                 window.fecharModalConfig();
@@ -856,7 +863,7 @@
         document.getElementById('file-input').onchange = function(e) {
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
             
-            // Correção de segurança: impede o processamento se nenhum ficheiro foi selecionado (ex: o utilizador clicou em "Cancelar")
+            // Correção de segurança: impede o processamento se nenhum ficheiro foi selecionado
             if (!e.target.files || e.target.files.length === 0) return;
             
             window.showToast("A enviar catálogo para a Nuvem...", "info"); 
@@ -904,7 +911,7 @@
                         }
                     }
                     window.showToast(`Sucesso! ${batchCount} itens sincronizados na Nuvem.`, "success");
-                    window.addLog(`Catálogo carregado (${batchCount} itens).`);
+                    window.addLog("Catálogo geral carregado na Nuvem");
                     window.fecharModalConfig();
                 } catch(error) { 
                     console.error(error);
