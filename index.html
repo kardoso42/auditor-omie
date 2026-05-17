@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auditor Estoque V-35.0 - Cloud Sinc</title>
+    <title>Auditor Estoque V-36.0 - Cloud Sinc</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -342,8 +342,21 @@
 
             <!-- Seção de Upload: Visível apenas ao Chefe do Setor -->
             <div id="chefe-upload-area" style="display:none; margin-bottom: 15px;">
-                <label style="font-size: 11px; font-weight: bold;">1. IMPORTAR EXCEL OMIE (Apenas Chefe):</label>
+                <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 5px;">1. SELECIONAR PLANILHA OMIE:</label>
                 <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="margin-top: 5px;">
+                
+                <!-- Nova Área de Seleção de Filtros Pré-Importação (Inicialmente oculta) -->
+                <div id="pre-import-filters" style="display:none; margin-top: 15px; border: 2px solid var(--orange); border-radius: 12px; padding: 12px; background: rgba(245, 158, 11, 0.05);">
+                    <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: bold; color: var(--orange);">🎯 SELEÇÃO PARA IMPORTAR:</p>
+                    
+                    <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📍 LOCAIS ENCONTRADOS:</label>
+                    <div id="pre-locais-box" class="multi-select-box" style="margin-bottom: 10px; max-height: 100px;"></div>
+                    
+                    <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📂 FAMÍLIAS ENCONTRADAS:</label>
+                    <div id="pre-familias-box" class="multi-select-box" style="margin-bottom: 15px; max-height: 100px;"></div>
+                    
+                    <button class="btn-green" id="btn-confirmar-subida" style="font-size:11px; padding:12px;">🚀 ENVIAR SELECIONADOS</button>
+                </div>
             </div>
             
             <div id="status-catalog" style="font-size: 11px; font-weight: bold; color: var(--green); margin-bottom: 15px;">☁️ Catálogo Sincronizado da Nuvem</div>
@@ -358,7 +371,8 @@
                 <button class="btn-outline" style="border-color: var(--orange); color: var(--orange);" onclick="verPendentes()">🔍 PENDENTES</button>
                 <button class="btn-outline" style="border-color: var(--red); color: var(--red);" onclick="zerarNaoContados()">⚠️ ZERAR RESTANTES</button>
             </div>
-            <button onclick="fecharModalConfig()" style="background:var(--bg); color:var(--text); margin-top:20px; border:1px solid var(--border); width:100%; border-radius:10px; padding: 14px; font-weight:bold; cursor:pointer; text-transform: uppercase;">Fechar Menu</button>
+            <!-- Botão Fechar Menu reestilizado com cor azul destacada e sombra suave para máxima usabilidade -->
+            <button onclick="fecharModalConfig()" style="background: var(--blue); color: white; margin-top: 20px; border: none; width: 100%; border-radius: 10px; padding: 14px; font-weight: 700; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); transition: background 0.2s;">Fechar Menu</button>
         </div>
     </div>
 
@@ -437,6 +451,9 @@
         
         let currentUser = null;
         const ADMIN_PIN = "1234"; // Pode alterar este código PIN para o valor que pretender
+
+        // Lista temporária que armazena os produtos da planilha antes de confirmar a subida
+        let itensTemporariosExcel = [];
 
         // Carregar catálogo salvo no telemóvel na inicialização do app
         try {
@@ -682,7 +699,7 @@
                 let totalZeradados = 0;
 
                 for (const i of pendentes) {
-                    const docId = `${i.codigo}_${i.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
+                    const docId = i.id || `${i.codigo}_${i.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
                     const payload = {...i, fisico: 0, dif: 0 - i.sistema, cmc_unitario: i.cmc || 0, lote: "", validade: "", obs: "NÃO ENCONTRADO", operador: operadorAtual, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now()};
                     
                     batch.set(doc(colRef, docId), payload);
@@ -762,7 +779,7 @@
             if (indexEdicao !== -1) { targetId = contagens[indexEdicao].id; }
             else if (idxAnt !== -1) { targetId = contagens[idxAnt].id; if(modo === 'somar') novaQtd += contagens[idxAnt].fisico; }
 
-            const docId = targetId || `${itemAtual.codigo}_${itemAtual.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
+            const docId = targetId || itemAtual.id || `${itemAtual.codigo}_${itemAtual.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
             const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
 
             const payload = {...itemAtual, fisico: novaQtd, dif: novaQtd - itemAtual.sistema, cmc_unitario: itemAtual.cmc || 0, lote: document.getElementById('m-lote').value.toUpperCase(), validade: document.getElementById('m-validade').value, obs: obs, operador: operadorAtual, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now()};
@@ -878,7 +895,7 @@
                 // Limpa catálogo em lotes rápidos
                 const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
                 for(const b of baseDados) {
-                    const docId = `${b.codigo}_${b.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
+                    const docId = b.id || `${b.codigo}_${b.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
                     batch.delete(doc(colRefCatalog, docId));
                     opCount++;
                     if (opCount >= 400) {
@@ -925,7 +942,7 @@
                                 window.addLog(`+1 Auto: ${itemContado.descricao}`); window.showToast(`+1 ${itemContado.descricao}`, 'success');
                             } else {
                                 let novoItem = itemBase || {codigo: cod, gtin: cod, descricao: "PRODUTO DESCONHECIDO", local: "SCAN", sistema: 0, cmc: 0, unidade: "UN"};
-                                const docId = `${novoItem.codigo}_${novoItem.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
+                                const docId = novoItem.id || `${novoItem.codigo}_${novoItem.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
                                 const payload = {...novoItem, fisico: 1, dif: 1 - novoItem.sistema, cmc_unitario: novoItem.cmc || 0, lote: "", validade: "", obs: "MODO CONTÍNUO", operador: operadorAtual, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now()};
                                 await setDoc(doc(colRef, docId), payload);
                                 window.addLog(`Novo Auto: ${novoItem.descricao}`); window.showToast(`Adicionado: ${novoItem.descricao}`, 'success');
@@ -962,16 +979,16 @@
             }
         };
 
-        // CHEFE ENVIA O CATÁLOGO DO EXCEL PARA A NUVEM (CORRIGIDO PARA DIVIDIR EM GRUPOS EXATOS DE 400 PRODUTOS)
+        // CHEFE SELECIONA PLANILHA: PROCESSA LOCAIS E FAMÍLIAS SEM SUBIR AINDA
         document.getElementById('file-input').onchange = function(e) {
             if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o Chefe de Setor pode importar dados!", "error");
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
             
             if (!e.target.files || e.target.files.length === 0) return;
             
-            window.showToast("A processar folha de cálculo...", "info"); 
+            window.showToast("A processar dados da folha...", "info"); 
             const reader = new FileReader();
-            reader.onload = async function(evt) {
+            reader.onload = function(evt) {
                 try {
                     const workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
                     const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
@@ -990,21 +1007,32 @@
                     }
                     
                     if (idxDesc === -1) {
-                        window.showToast("Coluna 'DESCRIÇÃO DO PRODUTO' não foi encontrada!", "error");
+                        window.showToast("Coluna 'DESCRIÇÃO DO PRODUTO' não encontrada!", "error");
                         return;
                     }
-                    
-                    const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
-                    
-                    // Primeiro, extraímos todos os itens válidos da folha
-                    const itemsToSave = [];
+
+                    // Processamos para a memória temporária
+                    itensTemporariosExcel = [];
+                    let preLocais = new Set();
+                    let preFamilias = new Set();
+                    let localCounter = 0;
+
                     for(let r=hRow+1; r<rows.length; r++) {
                         let row = rows[r]; 
                         if (row && row[idxDesc]) {
+                            localCounter++;
                             const l = idxLoc !== -1 ? String(row[idxLoc] || 'ESTOQUE PRINCIPAL').trim().toUpperCase() : 'ESTOQUE PRINCIPAL'; 
                             const f = idxFam !== -1 ? String(row[idxFam] || 'SEM FAMÍLIA').trim().toUpperCase() : 'SEM FAMÍLIA';
-                            itemsToSave.push({ 
-                                codigo: idxCod !== -1 ? String(row[idxCod] || '').trim().toUpperCase() : '', 
+                            
+                            preLocais.add(l);
+                            preFamilias.add(f);
+
+                            const codRaw = idxCod !== -1 ? String(row[idxCod] || '').trim().toUpperCase() : '';
+                            const idUnico = `${codRaw}_${l}_L${localCounter}`.replace(/[^a-zA-Z0-9_-]/g, '');
+
+                            itensTemporariosExcel.push({ 
+                                id: idUnico,
+                                codigo: codRaw, 
                                 descricao: String(row[idxDesc]).trim().toUpperCase(), 
                                 gtin: idxGtin !== -1 ? String(row[idxGtin] || '').trim() : '', 
                                 familia: f, 
@@ -1016,40 +1044,100 @@
                         }
                     }
 
-                    if(itemsToSave.length === 0) {
-                        return window.showToast("Nenhum produto válido encontrado na folha!", "warning");
+                    if (itensTemporariosExcel.length === 0) {
+                        window.showToast("Nenhum produto válido encontrado!", "error");
+                        return;
                     }
 
-                    window.showToast(`Preparados ${itemsToSave.length} itens. A enviar...`, "info");
+                    // Preenche a caixa de seleção de Locais Pré-Importação no HTML
+                    const preLocBox = document.getElementById('pre-locais-box');
+                    preLocBox.innerHTML = Array.from(preLocais).sort().map((l, i) => `
+                        <div class="multi-select-item">
+                            <input type="checkbox" class="pre-check-l" id="pre-loc-${i}" value="${l}" checked>
+                            <label for="pre-loc-${i}">${l}</label>
+                        </div>
+                    `).join('');
 
-                    // Dividimos a lista de produtos em "chunks" (pedaços) exatos de 400 itens
-                    const chunkSize = 400;
-                    for (let i = 0; i < itemsToSave.length; i += chunkSize) {
-                        const chunk = itemsToSave.slice(i, i + chunkSize);
-                        const batch = writeBatch(db);
+                    // Preenche a caixa de seleção de Famílias Pré-Importação no HTML
+                    const preFamBox = document.getElementById('pre-familias-box');
+                    preFamBox.innerHTML = Array.from(preFamilias).sort().map((f, i) => `
+                        <div class="multi-select-item">
+                            <input type="checkbox" class="pre-check-f" id="pre-fam-${i}" value="${f}" checked>
+                            <label for="pre-fam-${i}">${f}</label>
+                        </div>
+                    `).join('');
 
-                        chunk.forEach(item => {
-                            const docId = `${item.codigo}_${item.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
-                            batch.set(doc(colRefCatalog, docId), item);
-                        });
+                    // Mostra o painel de filtros e foca o ecrã do utilizador
+                    document.getElementById('pre-import-filters').style.display = 'block';
+                    window.showToast(`Planilha processada! Selecione os filtros para enviar.`, "success");
 
-                        // Envia o lote de 400 produtos de forma robusta e aguarda confirmação da rede
-                        await batch.commit();
-                        const progresso = Math.min(100, Math.round(((i + chunk.length) / itemsToSave.length) * 100));
-                        window.showToast(`A enviar catálogo... ${progresso}% concluído.`, "info");
-                    }
-                    
-                    window.showToast(`Sucesso! ${itemsToSave.length} itens sincronizados na Nuvem.`, "success");
-                    window.addLog(`Catálogo geral carregado na Nuvem (${itemsToSave.length} itens)`);
-                    
-                    // Força a auto-sincronização no telemóvel do chefe de imediato
-                    await window.sincronizarCatalogoNuvem();
-                    window.fecharModalConfig();
-                } catch(error) { 
-                    console.error(error);
-                    window.showToast("Erro ao processar catálogo.", "error"); 
+                } catch (error) {
+                    console.error("Erro ao ler Excel:", error);
+                    window.showToast("Erro ao processar planilha.", "error");
                 }
-            }; reader.readAsArrayBuffer(e.target.files[0]);
+            };
+            reader.readAsArrayBuffer(e.target.files[0]);
+        };
+
+        // ENVIAR SELECIONADOS: Executado após o chefe clicar no botão "ENVIAR SELECIONADOS"
+        document.getElementById('btn-confirmar-subida').onclick = async function() {
+            if (cargoAtual !== 'CHEFE') return window.showToast("Operação não permitida!", "error");
+            if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
+            if (itensTemporariosExcel.length === 0) return window.showToast("Selecione uma planilha válida!", "warning");
+
+            // Obtém listas selecionadas das caixas de filtro pré-importação
+            const preLocsEscolhidos = Array.from(document.querySelectorAll('.pre-check-l:checked')).map(cb => cb.value);
+            const preFamsEscolhidas = Array.from(document.querySelectorAll('.pre-check-f:checked')).map(cb => cb.value);
+
+            if (preLocsEscolhidos.length === 0) return window.showToast("Selecione pelo menos um Local!", "warning");
+            if (preFamsEscolhidas.length === 0) return window.showToast("Selecione pelo menos uma Família!", "warning");
+
+            // Filtra os itens temporários conforme as seleções feitas
+            const itensParaSubir = itensTemporariosExcel.filter(item => 
+                preLocsEscolhidos.includes(item.local) && preFamsEscolhidas.includes(item.familia)
+            );
+
+            if (itensParaSubir.length === 0) {
+                return window.showToast("Nenhum produto corresponde aos filtros escolhidos!", "warning");
+            }
+
+            if (!confirm(`Confirmar o envio de ${itensParaSubir.length} produtos filtrados para a Nuvem?`)) return;
+
+            window.showToast(`Preparados ${itensParaSubir.length} itens. A enviar...`, "info");
+            const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
+
+            try {
+                // Envia os blocos segmentados em frações robustas de 400 em rede móvel
+                const chunkSize = 400;
+                for (let i = 0; i < itensParaSubir.length; i += chunkSize) {
+                    const chunk = itensParaSubir.slice(i, i + chunkSize);
+                    const batch = writeBatch(db);
+
+                    chunk.forEach(item => {
+                        batch.set(doc(colRefCatalog, item.id), item);
+                    });
+
+                    await batch.commit();
+                    const progresso = Math.min(100, Math.round(((i + chunk.length) / itemsToSave.length) * 100));
+                    window.showToast(`A enviar catálogo... ${progresso}% concluído.`, "info");
+                }
+
+                window.showToast(`Sucesso! ${itensParaSubir.length} itens salvos na nuvem.`, "success");
+                window.addLog(`Catálogo filtrado carregado na Nuvem (${itensParaSubir.length} itens)`);
+
+                // Limpa variáveis temporárias de interface
+                itensTemporariosExcel = [];
+                document.getElementById('pre-import-filters').style.display = 'none';
+                document.getElementById('file-input').value = '';
+
+                // Sincroniza o catálogo local de imediato
+                await window.sincronizarCatalogoNuvem();
+                window.fecharModalConfig();
+
+            } catch (error) {
+                console.error("Erro ao subir lote:", error);
+                window.showToast("Erro ao sincronizar lote com a nuvem.", "error");
+            }
         };
 
         window.checkLogin();
