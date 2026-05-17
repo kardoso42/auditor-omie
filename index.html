@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auditor Estoque V-34.0 - Cloud Sinc</title>
+    <title>Auditor Estoque V-35.0 - Cloud Sinc</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -213,6 +213,13 @@
                 </div>
             </div>
 
+            <!-- Alerta Amigável para Operadores sem Catálogo local -->
+            <div id="alerta-catalogo-vazio" class="card print-hide" style="display:none; background: rgba(245, 158, 11, 0.1); border: 2px dashed var(--orange); text-align: center; padding: 20px; border-radius: 16px; margin-bottom: 15px;">
+                <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; color: var(--orange);">⚠️ O seu catálogo local está vazio!</p>
+                <p style="margin: 0 0 15px; font-size: 11px; color: var(--gray);">O Chefe de Setor já importou o Excel da Omie na nuvem? Clique abaixo para sincronizar o catálogo no seu telemóvel.</p>
+                <button class="btn-blue" onclick="sincronizarCatalogoNuvem()" style="max-width: 280px; margin: 0 auto; font-size: 11px; padding: 12px;">🔄 SINCRONIZAR PRODUTOS DA NUVEM</button>
+            </div>
+
             <div class="card print-hide">
                 <button id="btn-cam" class="btn-blue" onclick="controlarCamera()">📷 LIGAR SCANNER</button>
                 
@@ -330,17 +337,21 @@
                 <label class="switch"><input type="checkbox" id="modal-theme-toggle" onchange="toggleDarkMode()"><span class="slider"></span></label>
             </div>
 
-            <!-- Qualquer utilizador pode carregar o catálogo de forma autónoma -->
-            <div id="upload-area">
-                <label style="font-size: 11px; font-weight: bold;">1. FOLHA DE CÁLCULO (OMIE):</label>
-                <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="margin-bottom: 15px;">
+            <!-- Botão Sincronizar Catálogo da Nuvem: Altamente visível e disponível para todos -->
+            <button class="btn-green" onclick="sincronizarCatalogoNuvem()" style="margin-bottom: 15px; background: var(--blue);">🔄 SINCRONIZAR CATÁLOGO DA NUVEM</button>
+
+            <!-- Seção de Upload: Visível apenas ao Chefe do Setor -->
+            <div id="chefe-upload-area" style="display:none; margin-bottom: 15px;">
+                <label style="font-size: 11px; font-weight: bold;">1. IMPORTAR EXCEL OMIE (Apenas Chefe):</label>
+                <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="margin-top: 5px;">
             </div>
+            
             <div id="status-catalog" style="font-size: 11px; font-weight: bold; color: var(--green); margin-bottom: 15px;">☁️ Catálogo Sincronizado da Nuvem</div>
 
             <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📍 LOCAIS (FILTRAR):</label>
-            <div id="filtro-local-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">A carregar locais da nuvem...</small></div>
+            <div id="filtro-local-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Sincronize o catálogo para ver locais...</small></div>
             <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📂 FAMÍLIAS (FILTRAR):</label>
-            <div id="filtro-familia-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">A carregar famílias da nuvem...</small></div>
+            <div id="filtro-familia-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Sincronize o catálogo para ver famílias...</small></div>
             
             <!-- Botões Administrativos: Apenas para Chefe -->
             <div id="chefe-buttons-area" class="grid-buttons" style="display:none;">
@@ -394,7 +405,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         // =========================================================================
         // CONFIGURAÇÃO DO FIREBASE
@@ -426,6 +437,14 @@
         
         let currentUser = null;
         const ADMIN_PIN = "1234"; // Pode alterar este código PIN para o valor que pretender
+
+        // Carregar catálogo salvo no telemóvel na inicialização do app
+        try {
+            const cachedCatalog = localStorage.getItem('catalogo_local');
+            if (cachedCatalog) {
+                baseDados = JSON.parse(cachedCatalog);
+            }
+        } catch (e) { console.error("Erro ao ler catálogo em cache:", e); }
 
         // MOSTRAR/OCULTAR INPUT DO PIN NO LOGIN
         window.togglePinInput = function() {
@@ -459,33 +478,67 @@
                     contagens = newContagens.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
                     if (operadorAtual) window.render();
                 }, (error) => { console.error(error); });
-
-                // 2. Escuta o Catálogo Geral do Sistema na Nuvem
-                const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
-                onSnapshot(colRefCatalog, (snapshot) => {
-                    baseDados = [];
-                    let locs = new Set();
-                    let fams = new Set();
-                    snapshot.forEach(docSnap => {
-                        const item = docSnap.data();
-                        baseDados.push(item);
-                        if (item.local) locs.add(item.local);
-                        if (item.familia) fams.add(item.familia);
-                    });
-                    
-                    if (baseDados.length > 0) {
-                        document.getElementById('status-catalog').innerText = `☁️ Catálogo na Nuvem: ${baseDados.length} itens sincronizados.`;
-                        document.getElementById('status-catalog').style.color = 'var(--green)';
-                        
-                        document.getElementById('filtro-local-multi').innerHTML = Array.from(locs).sort().map((l, i) => `<div class="multi-select-item"><input type="checkbox" class="check-l" id="loc-${i}" value="${l}" checked><label for="loc-${i}">${l}</label></div>`).join('');
-                        document.getElementById('filtro-familia-multi').innerHTML = Array.from(fams).sort().map((f, i) => `<div class="multi-select-item"><input type="checkbox" class="check-f" id="fam-${i}" value="${f}" checked><label for="fam-${i}">${f}</label></div>`).join('');
-                    } else {
-                        document.getElementById('status-catalog').innerText = "☁️ Catálogo Vazio. Importe o ficheiro Excel no menu.";
-                        document.getElementById('status-catalog').style.color = 'var(--orange)';
-                    }
-                }, (error) => { console.error(error); });
+                
+                // Atualiza filtros com o catálogo que já temos guardado localmente
+                window.atualizarFiltrosDOM();
             }
         });
+
+        // FUNÇÃO DE SINC DO CATÁLOGO: Descarrega tudo da Nuvem para o telemóvel do operador
+        window.sincronizarCatalogoNuvem = async function() {
+            if (!currentUser) return window.showToast("A aguardar ligação com a nuvem...", "error");
+            window.showToast("A sincronizar base de dados...", "info");
+            
+            try {
+                const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
+                const querySnapshot = await getDocs(colRefCatalog);
+                
+                baseDados = [];
+                querySnapshot.forEach((docSnap) => {
+                    baseDados.push(docSnap.data());
+                });
+                
+                // Grava em localStorage para que não seja preciso sincronizar em todos os acessos
+                localStorage.setItem('catalogo_local', JSON.stringify(baseDados));
+                
+                window.atualizarFiltrosDOM();
+                window.showToast(`Sincronizado! ${baseDados.length} produtos carregados.`, "success");
+                window.addLog(`Sincronizou catálogo (${baseDados.length} itens)`);
+                
+                // Oculta aviso de catálogo vazio no ecrã de auditoria
+                document.getElementById('alerta-catalogo-vazio').style.display = 'none';
+            } catch (error) {
+                console.error("Erro ao sincronizar catálogo:", error);
+                window.showToast("Falha ao descarregar o catálogo da nuvem.", "error");
+            }
+        }
+
+        // Atualizar filtros locais no DOM
+        window.atualizarFiltrosDOM = function() {
+            let locs = new Set();
+            let fams = new Set();
+            baseDados.forEach(item => {
+                if (item.local) locs.add(item.local);
+                if (item.familia) fams.add(item.familia);
+            });
+            
+            if (baseDados.length > 0) {
+                document.getElementById('status-catalog').innerText = `☁️ Catálogo Sincronizado: ${baseDados.length} itens.`;
+                document.getElementById('status-catalog').style.color = 'var(--green)';
+                
+                document.getElementById('filtro-local-multi').innerHTML = Array.from(locs).sort().map((l, i) => `<div class="multi-select-item"><input type="checkbox" class="check-l" id="loc-${i}" value="${l}" checked><label for="loc-${i}">${l}</label></div>`).join('');
+                document.getElementById('filtro-familia-multi').innerHTML = Array.from(fams).sort().map((f, i) => `<div class="multi-select-item"><input type="checkbox" class="check-f" id="fam-${i}" value="${f}" checked><label for="fam-${i}">${f}</label></div>`).join('');
+                
+                document.getElementById('alerta-catalogo-vazio').style.display = 'none';
+            } else {
+                document.getElementById('status-catalog').innerText = "☁️ Sem Catálogo local. Clique para sincronizar!";
+                document.getElementById('status-catalog').style.color = 'var(--orange)';
+                
+                if (operadorAtual) {
+                    document.getElementById('alerta-catalogo-vazio').style.display = 'block';
+                }
+            }
+        }
 
         // FUNÇÕES TORNADAS GLOBAIS PARA O HTML
         window.checkLogin = function() {
@@ -500,7 +553,9 @@
                 document.getElementById('chefe-limpar-btn').style.display = isChefe ? 'block' : 'none';
                 document.getElementById('chefe-buttons-area').style.display = isChefe ? 'grid' : 'none';
                 document.getElementById('chefe-pdf-btn').style.display = isChefe ? 'block' : 'none';
+                document.getElementById('chefe-upload-area').style.display = isChefe ? 'block' : 'none';
 
+                window.atualizarFiltrosDOM();
                 window.render();
             } else {
                 document.getElementById('view-login').style.display = 'flex';
@@ -596,7 +651,7 @@
 
         window.verPendentes = function() {
             if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o chefe pode ver pendentes!", "error");
-            if(baseDados.length === 0) return window.showToast("Importe ou aguarde o catálogo!", "error");
+            if(baseDados.length === 0) return window.showToast("Sincronize o catálogo primeiro!", "error");
             const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
             const pendentes = baseDados.filter(i => !contagens.some(c => c.codigo === i.codigo && c.local === i.local) && (lS.length === 0 || lS.includes(i.local)) && (fS.length === 0 || fS.includes(i.familia)));
             const res = document.getElementById('resultados'); 
@@ -612,7 +667,7 @@
         window.zerarNaoContados = async function() {
             if (cargoAtual !== 'CHEFE') return window.showToast("Permissão negada!", "error");
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
-            if(baseDados.length === 0) return window.showToast("Aguarde ou importe o catálogo!", "error");
+            if(baseDados.length === 0) return window.showToast("Sincronize o catálogo primeiro!", "error");
             const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
             const pendentes = baseDados.filter(i => !contagens.some(c => c.codigo === i.codigo && c.local === i.local) && (lS.length === 0 || lS.includes(i.local)) && (fS.length === 0 || fS.includes(i.familia)));
             if(pendentes.length === 0) return window.showToast("Nenhum pendente!", "info");
@@ -654,7 +709,6 @@
                 document.getElementById('m-qtd').value = ''; document.getElementById('m-lote').value = '';
                 document.getElementById('m-validade').value = ''; 
                 
-                // Redefinir visibilidade de avisos de validade
                 const alertRed = document.getElementById('m-venc-alerta-red');
                 const alertOrange = document.getElementById('m-venc-alerta-orange');
                 if (alertRed) alertRed.style.display = 'none';
@@ -794,6 +848,12 @@
                     const docId = `${b.codigo}_${b.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
                     await deleteDoc(doc(colRefCatalog, docId));
                 }
+                
+                // Limpa localmente também
+                baseDados = [];
+                localStorage.removeItem('catalogo_local');
+                window.atualizarFiltrosDOM();
+                
                 window.addLog("Auditoria limpa e reiniciada", "warning"); 
                 window.fecharModalConfig();
             } 
@@ -859,11 +919,11 @@
             }
         };
 
-        // QUALQUER UTILIZADOR PODE ENVIAR O CATÁLOGO PARCIAL/TOTAL PARA A NUVEM
+        // CHEFE ENVIA O CATÁLOGO DO EXCEL PARA A NUVEM
         document.getElementById('file-input').onchange = function(e) {
+            if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o Chefe de Setor pode importar dados!", "error");
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
             
-            // Correção de segurança: impede o processamento se nenhum ficheiro foi selecionado
             if (!e.target.files || e.target.files.length === 0) return;
             
             window.showToast("A enviar catálogo para a Nuvem...", "info"); 
@@ -912,6 +972,9 @@
                     }
                     window.showToast(`Sucesso! ${batchCount} itens sincronizados na Nuvem.`, "success");
                     window.addLog("Catálogo geral carregado na Nuvem");
+                    
+                    // Força a auto-sincronização no telemóvel do chefe de imediato
+                    await window.sincronizarCatalogoNuvem();
                     window.fecharModalConfig();
                 } catch(error) { 
                     console.error(error);
