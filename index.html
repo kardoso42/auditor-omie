@@ -1079,6 +1079,9 @@
             reader.readAsArrayBuffer(e.target.files[0]);
         };
 
+        // Função utilitária para aguardar um pequeno intervalo (previne bloqueio de execução móvel)
+        const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
         // ENVIAR SELECIONADOS: Executado após o chefe clicar no botão "ENVIAR SELECIONADOS"
         document.getElementById('btn-confirmar-subida').onclick = async function() {
             if (cargoAtual !== 'CHEFE') return window.showToast("Operação não permitida!", "error");
@@ -1107,7 +1110,7 @@
             const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
 
             try {
-                // Envia os blocos segmentados em frações robustas de 400 em rede móvel
+                // Dividimos a lista de produtos em "chunks" (pedaços) exatos de 400 itens
                 const chunkSize = 400;
                 for (let i = 0; i < itensParaSubir.length; i += chunkSize) {
                     const chunk = itensParaSubir.slice(i, i + chunkSize);
@@ -1117,8 +1120,13 @@
                         batch.set(doc(colRefCatalog, item.id), item);
                     });
 
+                    // Envia o lote de 400 produtos de forma robusta e aguarda confirmação da rede
                     await batch.commit();
-                    const progresso = Math.min(100, Math.round(((i + chunk.length) / itemsToSave.length) * 100));
+                    
+                    // Adicionado delay de 200ms para evitar que o telemóvel cancele a transação por sobrecarga
+                    await delay(200);
+
+                    const progresso = Math.min(100, Math.round(((i + chunk.length) / itensParaSubir.length) * 100));
                     window.showToast(`A enviar catálogo... ${progresso}% concluído.`, "info");
                 }
 
