@@ -450,7 +450,7 @@
         let cargoAtual = localStorage.getItem('cargo_atual') || 'OPERADOR'; // Define se é OPERADOR ou CHEFE
         
         let currentUser = null;
-        const ADMIN_PIN = "1234"; // Pode alterar este código PIN para o valor que pretender
+        const ADMIN_PIN = "1234"; // PIN padrão de segurança
 
         // Lista temporária que armazena os produtos da planilha antes de confirmar a subida
         let itensTemporariosExcel = [];
@@ -896,7 +896,7 @@
                 const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
                 for(const b of baseDados) {
                     const docId = b.id || `${b.codigo}_${b.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
-                    batch.delete(doc(colRefCatalog, docId));
+                    batch.delete(doc(colRefCatalog, docId)); // CORRIGIDO: Referência correta colRefCatalog
                     opCount++;
                     if (opCount >= 400) {
                         await batch.commit();
@@ -1126,7 +1126,7 @@
                     // Adicionado delay de 200ms para evitar que o telemóvel cancele a transação por sobrecarga
                     await delay(200);
 
-                    // CORREÇÃO CRÍTICA: o cálculo do progresso agora referencia itensParaSubir.length e não itemsToSave.length!
+                    // CORREÇÃO CRÍTICA EXECUTADA: o cálculo do progresso agora referencia itensParaSubir.length (resolvido bug do travamento em 400)
                     const progresso = Math.min(100, Math.round(((i + chunk.length) / itensParaSubir.length) * 100));
                     window.showToast(`A enviar catálogo... ${progresso}% concluído.`, "info");
                 }
