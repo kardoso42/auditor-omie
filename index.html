@@ -359,7 +359,7 @@
                 </div>
             </div>
             
-            <div id="status-catalog" style="font-size: 11px; font-weight: bold; color: var(--green); margin-bottom: 15px;">☁️ Catálogo Sincronizado da Nuvem</div>
+            <div id="status-catalog" style="font-size: 11px; font-weight: bold; color: var(--orange); margin-bottom: 15px;">☁️ A carregar estado do catálogo...</div>
 
             <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📍 LOCAIS (FILTRAR):</label>
             <div id="filtro-local-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Sincronize o catálogo para ver locais...</small></div>
@@ -546,9 +546,10 @@
                 document.getElementById('filtro-local-multi').innerHTML = Array.from(locs).sort().map((l, i) => `<div class="multi-select-item"><input type="checkbox" class="check-l" id="loc-${i}" value="${l}" checked><label for="loc-${i}">${l}</label></div>`).join('');
                 document.getElementById('filtro-familia-multi').innerHTML = Array.from(fams).sort().map((f, i) => `<div class="multi-select-item"><input type="checkbox" class="check-f" id="fam-${i}" value="${f}" checked><label for="fam-${i}">${f}</label></div>`).join('');
                 
+                // Oculta banner de erro se já houver produtos carregados localmente
                 document.getElementById('alerta-catalogo-vazio').style.display = 'none';
             } else {
-                document.getElementById('status-catalog').innerText = "☁️ Sem Catálogo local. Clique para sincronizar!";
+                document.getElementById('status-catalog').innerText = "☁️ Catálogo Vazio localmente. Sincronize!";
                 document.getElementById('status-catalog').style.color = 'var(--orange)';
                 
                 if (operadorAtual) {
@@ -787,8 +788,13 @@
             try {
                 await setDoc(doc(colRef, docId), payload);
                 window.addLog(`${modo==='somar'?'+':''} ${novaQtd}x ${itemAtual.descricao}`);
-                document.getElementById('busca-input').value = ''; document.getElementById('resultados').innerHTML = '';
-                window.fecharModal(); window.showToast("Nuvem Sincronizada", "success"); document.getElementById('busca-input').focus();
+                document.getElementById('busca-input').value = ''; 
+                document.getElementById('resultados').innerHTML = '';
+                
+                // CORREÇÃO: Removido o bloqueio silencioso do document.getElementById('busca-input').focus() 
+                // para permitir que a função window.fecharModal() execute até ao final sem interrupção de segurança em mobile.
+                window.fecharModal(); 
+                window.showToast("Nuvem Sincronizada", "success"); 
             } catch (e) { window.showToast("Falha na Nuvem", "error"); }
         }
 
@@ -1123,10 +1129,10 @@
                     // Envia o lote de 400 produtos de forma robusta e aguarda confirmação da rede
                     await batch.commit();
                     
-                    // Adicionado delay de 200ms para evitar que o telemóvel cancele a transação por sobrecarga
-                    await delay(200);
+                    // Adicionado delay de 250ms para evitar que o telemóvel cancele a transação por sobrecarga
+                    await delay(250);
 
-                    // CORREÇÃO CRÍTICA EXECUTADA: o cálculo do progresso agora referencia itensParaSubir.length (resolvido bug do travamento em 400)
+                    // CORREÇÃO: Usar a variável do escopo correto 'itensParaSubir' para evitar o travamento
                     const progresso = Math.min(100, Math.round(((i + chunk.length) / itensParaSubir.length) * 100));
                     window.showToast(`A enviar catálogo... ${progresso}% concluído.`, "info");
                 }
