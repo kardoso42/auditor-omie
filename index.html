@@ -791,8 +791,6 @@
                 document.getElementById('busca-input').value = ''; 
                 document.getElementById('resultados').innerHTML = '';
                 
-                // CORREÇÃO: Removido o bloqueio silencioso do document.getElementById('busca-input').focus() 
-                // para permitir que a função window.fecharModal() execute até ao final sem interrupção de segurança em mobile.
                 window.fecharModal(); 
                 window.showToast("Nuvem Sincronizada", "success"); 
             } catch (e) { window.showToast("Falha na Nuvem", "error"); }
@@ -902,7 +900,7 @@
                 const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
                 for(const b of baseDados) {
                     const docId = b.id || `${b.codigo}_${b.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
-                    batch.delete(doc(colRefCatalog, docId)); // CORRIGIDO: Referência correta colRefCatalog
+                    batch.delete(doc(colRefCatalog, docId));
                     opCount++;
                     if (opCount >= 400) {
                         await batch.commit();
