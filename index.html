@@ -1164,7 +1164,7 @@ const audioCtx = AudioCtx ? new AudioCtx() : null;
 
             try {
                 // Dividimos a lista de produtos em "chunks" (pedaços) exatos de 400 itens
-                const chunkSize = 400;
+                const chunkSize = 499;
                 for (let i = 0; i < itensParaSubir.length; i += chunkSize) {
                     const chunk = itensParaSubir.slice(i, i + chunkSize);
                     const batch = writeBatch(db);
@@ -1177,7 +1177,7 @@ const audioCtx = AudioCtx ? new AudioCtx() : null;
                     await batch.commit();
                     
                     // Adicionado delay de 250ms para evitar que o telemóvel cancele a transação por sobrecarga
-                    await delay(250);
+                    await delay(50);
 
                     // CORREÇÃO: Usar a variável do escopo correto 'itensParaSubir' para evitar o travamento
                     const progresso = Math.min(100, Math.round(((i + chunk.length) / itensParaSubir.length) * 100));
