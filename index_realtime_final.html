@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Auditor Estoque V-37.0 - Cloud Sinc</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        :root { 
+            --blue: #2563eb; --blue-dark: #1e40af; --green: #10b981; --red: #ef4444; 
+            --gray: #64748b; --orange: #f59e0b; --bg: #f8fafc; --surface: #ffffff;
+            --text: #334155; --border: #e2e8f0;
+        }
+
+        body.dark-mode {
+            --blue: #3b82f6; --blue-dark: #93c5fd; --green: #34d399; --red: #f87171; 
+            --gray: #94a3b8; --orange: #fbbf24; --bg: #0f172a; --surface: #1e293b;
+            --text: #f1f5f9; --border: #334155;
+        }
+        
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            margin: 0; padding: 15px; background: var(--bg); color: var(--text); 
+            -webkit-font-smoothing: antialiased; transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .app-header { text-align: center; margin-bottom: 20px; margin-top: 10px; position: relative; padding-right: 45px; }
+        .app-header h2 { margin: 0; color: var(--blue-dark); font-weight: 700; font-size: 22px; letter-spacing: -0.5px; }
+        .app-header p { margin: 4px 0 0; font-size: 12px; color: var(--gray); font-weight: 500; }
+        
+        .header-actions { position: absolute; right: 0; top: 0; display: flex; gap: 8px; }
+        #btn-config {
+            width: 40px; height: 40px; padding: 0; border-radius: 50%; background: var(--surface); border: 1px solid var(--border); 
+            font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); color: var(--text);
+            display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;
+        }
+        #btn-config:hover { background: var(--border); }
+
+        .card { 
+            background: var(--surface); padding: 20px; border-radius: 16px; 
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); 
+            margin-bottom: 15px; border: 1px solid var(--border); transition: background-color 0.3s, border-color 0.3s;
+        }
+        
+        .dash-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 15px; }
+        .dash-card { 
+            background: var(--surface); padding: 15px; border-radius: 12px; text-align: center; 
+            border-left: 4px solid var(--blue); box-shadow: 0 2px 4px rgb(0 0 0 / 0.02);
+            border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .dash-card h4 { margin: 0; font-size: 12px; color: var(--gray); text-transform: uppercase; font-weight: 600; }
+        .dash-card p { margin: 8px 0 0; font-size: 20px; font-weight: 700; color: var(--blue-dark); }
+        
+        .multi-select-box { border: 1px solid var(--border); border-radius: 8px; padding: 5px; max-height: 140px; overflow-y: auto; background: var(--surface); margin-top: 8px; }
+        .multi-select-item { display: flex; align-items: center; gap: 10px; font-size: 12px; padding: 10px 12px; border-bottom: 1px solid var(--border); transition: background 0.2s; }
+        .multi-select-item:hover { opacity: 0.8; }
+        .multi-select-item:last-child { border-bottom: none; }
+        .multi-select-item input { margin: 0; width: 16px; height: 16px; cursor: pointer; accent-color: var(--blue); }
+        .multi-select-item label { flex: 1; cursor: pointer; font-weight: 500; color: var(--text); margin: 0; }
+        
+        input[type="text"], input[type="number"], input[type="date"], input[type="file"], select { 
+            width: 100%; box-sizing: border-box; padding: 14px; border: 1px solid var(--border); 
+            border-radius: 10px; font-size: 14px; background: var(--bg); color: var(--text); transition: all 0.2s; font-family: inherit;
+        }
+        input[type="file"] { padding: 10px; font-size: 12px; background: var(--surface); border: 1px dashed var(--gray); cursor: pointer; }
+        input:focus, select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15); background: var(--surface); }
+        input[type="text"] { text-transform: uppercase; }
+        
+        .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        button { 
+            width: 100%; padding: 14px; border-radius: 10px; border: none; font-weight: 600; 
+            cursor: pointer; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
+            transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        button:active { transform: scale(0.98); }
+        .btn-blue { background: var(--blue); color: white; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2); }
+        .btn-green { background: var(--green); color: white; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); }
+        .btn-orange { background: var(--orange); color: white; }
+        .btn-red { background: var(--red); color: white; }
+        .btn-outline { background: transparent; border: 1.5px solid var(--blue); color: var(--blue); font-size: 11px; padding: 12px; }
+        
+        table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11px; margin-top: 15px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        th { background: var(--bg); color: var(--gray); font-weight: 600; text-transform: uppercase; padding: 12px 8px; border-bottom: 1px solid var(--border); text-align: center; }
+        td { padding: 12px 8px; text-align: center; border-bottom: 1px solid var(--border); color: var(--text); font-weight: 500; }
+        tr:last-child td { border-bottom: none; }
+        tbody tr:hover { opacity: 0.8; cursor: pointer; }
+        
+        .item-res { border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; padding: 15px; cursor: pointer; text-align: left; background: var(--surface); transition: all 0.2s; }
+        .item-res strong { display: block; color: var(--blue-dark); margin-bottom: 4px; font-size: 13px; }
+        
+        .switch-container { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border: 1px solid var(--border); padding: 14px 16px; border-radius: 10px; margin-top: 10px; }
+        .switch-container label { font-size: 12px; font-weight: 600; color: var(--text); }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--gray); transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        input:checked + .slider { background-color: var(--green); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; padding: 15px; box-sizing: border-box; }
+        .modal-content { background: var(--surface); width: 100%; max-width: 400px; padding: 24px; border-radius: 20px; max-height: 90vh; overflow-y: auto; box-sizing: border-box; box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3); border: 1px solid var(--border); }
+        .m-info-box { background: var(--bg); padding: 15px; border-radius: 12px; margin: 15px 0; border: 1px solid var(--border); border-left: 4px solid var(--blue); }
+        .m-info-box p { margin: 5px 0; }
+        
+        #toast-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 10001; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: rgba(0, 0, 0, 0.9); color: white; padding: 14px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; text-align: center; width: max-content; max-width: 90vw; transition: opacity 0.3s; }
+        .toast.success { background: var(--green); color: #fff; }
+        .toast.error { background: var(--red); color: #fff; }
+        .toast.warning { background: var(--orange); color: #fff; }
+        
+        .vencido { background: rgba(239, 68, 68, 0.1) !important; color: var(--red); }
+        .vence-breve { background: rgba(245, 158, 11, 0.1) !important; color: var(--orange); }
+
+        .tabs { display: flex; background: var(--border); padding: 4px; border-radius: 12px; margin: 0 auto 20px; max-width: 400px; }
+        .tab-btn { flex: 1; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--gray); background: transparent; text-transform: none; letter-spacing: normal; transition: all 0.3s; }
+        .tab-btn.active { background: var(--surface); color: var(--blue-dark); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .report-card { background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .report-card h5 { margin: 0 0 8px 0; color: var(--gray); font-size: 11px; text-transform: uppercase; }
+        .report-card.red p { color: var(--red); }
+        .report-card.green p { color: var(--green); }
+        .report-card p { margin: 0; font-size: 18px; font-weight: 700; }
+        
+        .progress-container { width: 100%; background: var(--border); border-radius: 10px; height: 12px; margin-top: 10px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--green); width: 0%; transition: width 0.5s ease; }
+
+        .chart-row { display: flex; align-items: center; margin-bottom: 10px; font-size: 11px; }
+        .chart-label { width: 90px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; font-weight: 600; color: var(--text); text-align: right; }
+        .chart-bar-container { flex: 1; background: var(--border); border-radius: 6px; height: 16px; overflow: hidden; }
+        .chart-bar { height: 100%; background: var(--blue); border-radius: 6px; transition: width 0.5s ease; }
+        .chart-value { width: 45px; text-align: right; font-weight: 700; color: var(--blue-dark); padding-left: 8px; }
+
+        .log-entry { font-size: 11px; padding: 8px 0; border-bottom: 1px dashed var(--border); display: flex; justify-content: space-between; }
+        .log-entry:last-child { border-bottom: none; }
+        .log-time { color: var(--gray); font-weight: 600; width: 60px; }
+        .log-msg { flex: 1; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .log-operador { font-weight: bold; color: var(--blue-dark); margin-right: 5px; }
+
+        #view-login { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 85vh; }
+        .login-card { background: var(--surface); padding: 30px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); border: 1px solid var(--border); width: 100%; max-width: 350px; text-align: center; }
+        .user-badge { background: var(--blue); color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; margin-top: 10px; }
+        .cloud-badge { background: var(--green); color: white; padding: 2px 8px; border-radius: 10px; font-size: 9px; vertical-align: middle; margin-left: 5px; }
+
+        .print-only { display: none; }
+        @media print {
+            body { background: white; color: black; padding: 0; margin: 0; }
+            .app-header, .tabs, .print-hide, button, .toggle-box, .switch-container, #toast-container { display: none !important; }
+            .card { box-shadow: none; border: none; margin: 0; padding: 10px 0; page-break-inside: avoid; }
+            .print-only { display: block; }
+            .signature-block { margin-top: 60px; display: flex; justify-content: space-around; page-break-inside: avoid; }
+            .signature-line { border-top: 1px solid black; width: 40%; text-align: center; padding-top: 8px; font-size: 12px; font-weight: bold; }
+            table { border: 1px solid black; } th, td { border-bottom: 1px solid black; color: black !important; }
+            .report-card { border: 1px solid black; }
+            #view-relatorios { display: block !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TELA DE LOGIN -->
+    <div id="view-login">
+        <div class="login-card">
+            <h2 style="color: var(--blue-dark); margin-top: 0; font-size: 24px;">Auditor Estoque</h2>
+            <p style="color: var(--gray); font-size: 13px; margin-bottom: 20px;">Sincronização Cloud Ativada. Identifique-se para registar as auditorias.</p>
+            
+            <input type="text" id="login-nome" placeholder="Seu Nome ou Matrícula" style="margin-bottom: 12px; text-align: center; font-weight: bold;">
+            
+            <select id="login-cargo" onchange="togglePinInput()" style="margin-bottom: 12px; text-align: center; font-weight: bold;">
+                <option value="OPERADOR">👤 OPERADOR (APENAS CONTAGEM)</option>
+                <option value="CHEFE">🔑 CHEFE DO SETOR (ADMINISTRADOR)</option>
+            </select>
+
+            <div id="pin-area" style="display: none; margin-bottom: 12px;">
+                <input type="password" id="login-pin" inputmode="numeric" pattern="[0-9]*" placeholder="PIN de Acesso do Chefe" style="text-align: center; font-weight: bold; border: 1.5px solid var(--orange);">
+            </div>
+
+            <button class="btn-blue" onclick="fazerLogin()">Entrar no Sistema</button>
+        </div>
+    </div>
+
+    <!-- APLICAÇÃO PRINCIPAL -->
+    <div id="view-app" style="display:none;">
+        <div class="app-header">
+            <h2>Auditor Estoque <span class="cloud-badge">☁️ CLOUD</span></h2>
+            <p>Gestão de Inventário Sincronizada</p>
+            <div class="print-hide">
+                <span class="user-badge">👤 <span id="lbl-operador">Operador</span> <button onclick="fazerLogout()" style="background:none; border:none; color:rgba(255,255,255,0.7); padding:0; margin-left:8px; cursor:pointer; font-size:10px; font-weight:bold;">SAIR</button></span>
+            </div>
+            <div class="header-actions print-hide">
+                <button onclick="abrirModalConfig()" id="btn-config" title="Menu Principal">☰</button>
+            </div>
+        </div>
+
+        <div class="tabs print-hide">
+            <button class="tab-btn active" id="tab-auditoria" onclick="mudarAba('auditoria')">🔍 Auditoria</button>
+            <button class="tab-btn" id="tab-relatorios" onclick="mudarAba('relatorios')">📊 Relatórios</button>
+        </div>
+
+        <!-- ECRÃ DE AUDITORIA -->
+        <div id="view-auditoria">
+            <div class="dash-container print-hide">
+                <div class="dash-card"><h4>Itens</h4><p id="dash-skus">0</p></div>
+                <div class="dash-card"><h4>Peças</h4><p id="dash-pecas">0</p></div>
+                <div class="dash-container-financeiro" style="grid-column: span 2; display: flex; flex-direction: column;">
+                    <div class="dash-card" style="border-top-color: var(--orange); width: 100%; box-sizing: border-box;">
+                        <h4>Divergência Financeira</h4><p id="dash-financeiro">R$ 0,00</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerta Amigável para Operadores sem Catálogo local -->
+            <div id="alerta-catalogo-vazio" class="card print-hide" style="display:none; background: rgba(245, 158, 11, 0.1); border: 2px dashed var(--orange); text-align: center; padding: 20px; border-radius: 16px; margin-bottom: 15px;">
+                <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; color: var(--orange);">⚠️ O seu catálogo local está vazio!</p>
+                <p style="margin: 0 0 15px; font-size: 11px; color: var(--gray);">O Chefe de Setor já importou o Excel da Omie na nuvem? Clique abaixo para sincronizar o catálogo no seu telemóvel.</p>
+                <button class="btn-blue" onclick="sincronizarCatalogoNuvem()" style="max-width: 280px; margin: 0 auto; font-size: 11px; padding: 12px;">🔄 SINCRONIZAR PRODUTOS DA NUVEM</button>
+            </div>
+
+            <div class="card print-hide">
+                <button id="btn-cam" class="btn-blue" onclick="controlarCamera()">📷 LIGAR SCANNER</button>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                    <div class="switch-container" style="margin-top: 0;">
+                        <label for="modo-continuo">Modo Contínuo (+1 Auto)</label>
+                        <label class="switch"><input type="checkbox" id="modo-continuo"><span class="slider"></span></label>
+                    </div>
+                    <div class="switch-container" style="margin-top: 0;">
+                        <label for="modo-cego">Modo Cego (Ocultar Sist)</label>
+                        <label class="switch"><input type="checkbox" id="modo-cego" onchange="render()"><span class="slider"></span></label>
+                    </div>
+                </div>
+
+                <div id="reader" style="display:none; width:100%; margin-top:10px;"></div>
+                <input type="text" id="busca-input" style="margin-top:10px; border: 2px solid var(--blue-dark);" placeholder="PESQUISAR NOME OU GTIN...">
+                <div id="resultados" style="max-height: 250px; overflow-y: auto;"></div>
+            </div>
+
+            <!-- Log Cronologico -->
+            <div class="card print-hide" style="padding: 12px 20px;">
+                <h4 style="margin: 0 0 8px 0; font-size: 11px; color: var(--gray); text-transform: uppercase;">🕒 Feed em Tempo Real</h4>
+                <div id="log-container">
+                    <div style="font-size:11px; color:var(--gray);">A aguardar contagens da equipa...</div>
+                </div>
+            </div>
+
+            <div class="card print-hide">
+                <!-- Zona Reservada para Exportação (Apenas Chefe de Setor) -->
+                <div id="chefe-export-area" style="display:flex; gap:5px; margin-bottom: 15px;">
+                    <button class="btn-green" onclick="baixarExcel('tudo')">📥 EXPORTAR TUDO</button>
+                    <button class="btn-blue" onclick="baixarExcel('erros')">🚫 SÓ ERROS</button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="tabela">
+                        <thead><tr><th>Produto</th><th class="col-sist">Sist</th><th>Fis</th><th class="col-sist">Dif</th><th class="col-sist">Operador</th></tr></thead>
+                        <tbody id="tabela-body"></tbody>
+                    </table>
+                </div>
+                <!-- Limpar auditoria apenas disponível para o Chefe de Setor -->
+                <button id="chefe-limpar-btn" onclick="limparTudo()" style="margin-top:20px; color:var(--red); background:none; font-size:10px; border:none; width:100%; display:none;">🗑️ LIMPAR AUDITORIA NA NUVEM</button>
+            </div>
+        </div>
+
+        <!-- ECRÃ DE RELATÓRIOS -->
+        <div id="view-relatorios" style="display: none;">
+            <h2 class="print-only" style="text-align: center; margin-bottom: 20px;">Relatório de Auditoria de Inventário</h2>
+            <p class="print-only" style="text-align: center; font-size: 12px; margin-top:-15px;" id="print-data"></p>
+
+            <div class="card">
+                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Progresso da Auditoria</h3>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600;">
+                    <span id="progresso-texto">0 / 0 Itens Contados</span>
+                    <span id="progresso-percentagem">0%</span>
+                </div>
+                <div class="progress-container print-hide">
+                    <div class="progress-bar" id="progresso-barra"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Impacto Financeiro Global</h3>
+                <div class="report-grid">
+                    <div class="report-card green">
+                        <h5>Sobra (Positivo)</h5>
+                        <p id="rel-sobra-fin">R$ 0,00</p>
+                        <small id="rel-sobra-qtd" style="font-size: 10px; color: var(--gray); margin-top: 5px;">0 Peças</small>
+                    </div>
+                    <div class="report-card red">
+                        <h5>Quebra (Negativo)</h5>
+                        <p id="rel-quebra-fin">R$ 0,00</p>
+                        <small id="rel-quebra-qtd" style="font-size: 10px; color: var(--gray); margin-top: 5px;">0 Peças</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Top 5 Maiores Furos</h3>
+                <div style="overflow-x: auto;">
+                    <table id="tabela-top-furos">
+                        <thead><tr><th>Produto</th><th>Dif</th><th>Impacto</th></tr></thead>
+                        <tbody id="tabela-furos-body">
+                            <tr><td colspan="3">A aguardar dados...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card print-hide">
+                <h3 style="margin-top: 0; font-size: 14px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px;">Top Famílias Contadas</h3>
+                <div id="chart-familias" style="margin-top: 15px;">
+                    <p style="font-size:12px; color:var(--gray); text-align:center; margin: 0;">A aguardar dados...</p>
+                </div>
+            </div>
+
+            <div class="print-only signature-block">
+                <div class="signature-line">Assinatura do Auditor</div>
+                <div class="signature-line">Assinatura do Gestor / Responsável</div>
+            </div>
+
+            <!-- Botão de impressão visível apenas ao chefe de setor -->
+            <button id="chefe-pdf-btn" class="btn-blue print-hide" onclick="imprimirPDF()" style="margin-top: 10px; display:none;">📄 GERAR RELATÓRIO PDF</button>
+        </div>
+    </div> <!-- FIM DO VIEW-APP -->
+
+    <div id="toast-container"></div>
+
+    <!-- Modal de Menu/Importação -->
+    <div id="modal-config" class="modal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; font-size: 16px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;">☰ Menu Principal</h3>
+            
+            <div class="switch-container" style="margin-top: 0; margin-bottom: 15px;">
+                <label for="modal-theme-toggle">Modo Escuro (Dark Mode)</label>
+                <label class="switch"><input type="checkbox" id="modal-theme-toggle" onchange="toggleDarkMode()"><span class="slider"></span></label>
+            </div>
+
+            <!-- Botão Sincronizar Catálogo da Nuvem: Altamente visível e disponível para todos -->
+            <button class="btn-green" onclick="sincronizarCatalogoNuvem()" style="margin-bottom: 15px; background: var(--blue);">🔄 SINCRONIZAR CATÁLOGO DA NUVEM</button>
+
+            <!-- Seção de Upload: Visível apenas ao Chefe do Setor -->
+            <div id="chefe-upload-area" style="display:none; margin-bottom: 15px;">
+                <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 5px;">1. SELECIONAR PLANILHA OMIE:</label>
+                <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="margin-top: 5px;">
+                
+                <!-- Nova Área de Seleção de Filtros Pré-Importação (Inicialmente oculta) -->
+                <div id="pre-import-filters" style="display:none; margin-top: 15px; border: 2px solid var(--orange); border-radius: 12px; padding: 12px; background: rgba(245, 158, 11, 0.05);">
+                    <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: bold; color: var(--orange);">🎯 SELEÇÃO PARA IMPORTAR:</p>
+                    
+                    <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📍 LOCAIS ENCONTRADOS:</label>
+                    <div id="pre-locais-box" class="multi-select-box" style="margin-bottom: 10px; max-height: 100px;"></div>
+                    
+                    <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📂 FAMÍLIAS ENCONTRADAS:</label>
+                    <div id="pre-familias-box" class="multi-select-box" style="margin-bottom: 15px; max-height: 100px;"></div>
+                    
+                    <button class="btn-green" id="btn-confirmar-subida" style="font-size:11px; padding:12px;">🚀 ENVIAR SELECIONADOS</button>
+                </div>
+            </div>
+            
+            <div id="status-catalog" style="font-size: 11px; font-weight: bold; color: var(--orange); margin-bottom: 15px;">☁️ A carregar estado do catálogo...</div>
+
+            <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📍 LOCAIS (FILTRAR):</label>
+            <div id="filtro-local-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Sincronize o catálogo para ver locais...</small></div>
+            <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📂 FAMÍLIAS (FILTRAR):</label>
+            <div id="filtro-familia-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Sincronize o catálogo para ver famílias...</small></div>
+            
+            <!-- Botões Administrativos: Apenas para Chefe -->
+            <div id="chefe-buttons-area" class="grid-buttons" style="display:none;">
+                <button class="btn-outline" style="border-color: var(--orange); color: var(--orange);" onclick="verPendentes()">🔍 PENDENTES</button>
+                <button class="btn-outline" style="border-color: var(--red); color: var(--red);" onclick="zerarNaoContados()">⚠️ ZERAR RESTANTES</button>
+            </div>
+            <!-- Botão Fechar Menu reestilizado com cor azul destacada e sombra suave para máxima usabilidade -->
+            <button onclick="fecharModalConfig()" style="background: var(--blue); color: white; margin-top: 20px; border: none; width: 100%; border-radius: 10px; padding: 14px; font-weight: 700; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); transition: background 0.2s;">Fechar Menu</button>
+        </div>
+    </div>
+
+    <!-- Modal de Contagem -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div id="m-aviso-dup" style="display:none; background:#fef08a; color:#854d0e; padding:10px; border-radius:8px; margin-bottom:10px; text-align:center; font-weight:bold;">⚠️ JÁ CONTADO: <span id="m-qtd-anterior">0</span></div>
+            <label style="font-size: 11px; font-weight: bold;">PRODUTO:</label>
+            <input type="text" id="m-nome-edit" style="margin-bottom:10px; font-weight:bold;">
+            <div class="m-info-box">
+                <p id="m-gtin" style="font-size:11px; margin:0; color:var(--orange); font-weight:bold;"></p>
+                <p id="m-loc-cod" style="font-size:11px; margin:4px 0; color:var(--gray);"></p>
+                <div id="modal-sist-area">
+                    <p id="m-sist-val" style="font-size:13px; font-weight:bold; color:var(--blue); margin:5px 0;"></p>
+                    <p id="m-cmc-val" style="font-size:11px; color:var(--red); margin:0; font-weight:bold;"></p>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <div style="flex:1">
+                    <label style="font-size:11px; font-weight:bold;">QTD FÍSICA (ACEITA CÁLCULOS):</label>
+                    <input type="text" id="m-qtd" inputmode="decimal" placeholder="Ex: 3*12+4" onblur="esteCalculo(this)" style="font-size:20px; font-weight:bold; border:2px solid var(--blue);">
+                </div>
+                <div style="width:75px"><label style="font-size:11px; font-weight:bold;">UN:</label><input type="text" id="m-un-edit"></div>
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                <div><label style="font-size:11px;">Lote:</label><input type="text" id="m-lote"></div>
+                <div><label style="font-size:11px;">Validade:</label><input type="date" id="m-validade"></div>
+            </div>
+            <div id="m-venc-alerta-red" style="display:none; font-size:10px; font-weight:bold; color:var(--red); margin-top:5px;">⚠️ PRODUTO VENCIDO!</div>
+            <div id="m-venc-alerta-orange" style="display:none; font-size:10px; font-weight:bold; color:var(--orange); margin-top:5px;">⚠️ VENCE EM BREVE (30 DIAS)</div>
+            <div style="margin-top:10px;"><label style="font-size:11px;">OBSERVAÇÕES:</label><input type="text" id="m-obs"></div>
+            
+            <div style="margin-top:20px;">
+                <button id="btn-salvar-normal" class="btn-green" onclick="salvarFinal('substituir')">☁️ GUARDAR NA NUVEM</button>
+                <div id="botoes-duplicado" style="display:none; gap:10px;"><button class="btn-blue" onclick="salvarFinal('somar')">➕ SOMAR</button><button class="btn-orange" onclick="salvarFinal('substituir')">🔄 TROCAR</button></div>
+                <!-- Excluir contagem individual apenas para Chefes -->
+                <button id="btn-excluir-item" class="btn-red" style="display:none; margin-top:10px;" onclick="excluirContagemEspecifica()">🗑️ APAGAR CONTAGEM</button>
+            </div>
+            <button onclick="fecharModal()" style="background:none; color:var(--gray); margin-top:5px; border:none; width:100%;">CANCELAR</button>
+        </div>
+    </div>
+
+    <!-- SCRIPT TIPO MÓDULO PARA IMPORTAR FIREBASE -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, getDocs, writeBatch } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        // =========================================================================
+        // CONFIGURAÇÃO DO FIREBASE
+        // =========================================================================
+        let firebaseConfig = {
+            apiKey: "AIzaSyCUqfEuvJNSKERsE-Cj1U3ysbJ6GB_4IGg",
+            authDomain: "auditor-estoque.firebaseapp.com",
+            projectId: "auditor-estoque",
+            storageBucket: "auditor-estoque.firebasestorage.app",
+            messagingSenderId: "969025703082",
+            appId: "1:969025703082:web:11d3fa2060886071edd4d3"
+        };
+        
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'auditor-estoque-v32';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // VARIÁVEIS GLOBAIS DA APLICAÇÃO
+        let baseDados = [];
+        let contagens = [];
+        let logAcoes = [];
+        let itemAtual = null; let indexEdicao = -1; let html5QrCode = null; let diasParaVencer = null;
+        
+        let operadorAtual = localStorage.getItem('operador_atual') || '';
+        let cargoAtual = localStorage.getItem('cargo_atual') || 'OPERADOR'; // Define se é OPERADOR ou CHEFE
+        
+        let currentUser = null;
+        const ADMIN_PIN = "1234"; // PIN de acesso padrão do Chefe
+
+        // Lista temporária que armazena os produtos da planilha antes de confirmar a subida
+        let itensTemporariosExcel = [];
+
+        // Carregar catálogo salvo no telemóvel na inicialização do app
+        try {
+            const cachedCatalog = localStorage.getItem('catalogo_local');
+            if (cachedCatalog) {
+                baseDados = JSON.parse(cachedCatalog);
+            }
+        } catch (e) { console.error("Erro ao ler catálogo em cache:", e); }
+
+        // MOSTRAR/OCULTAR INPUT DO PIN NO LOGIN
+        window.togglePinInput = function() {
+            const cargo = document.getElementById('login-cargo').value;
+            document.getElementById('pin-area').style.display = cargo === 'CHEFE' ? 'block' : 'none';
+        }
+
+        // INICIA AUTENTICAÇÃO INVISÍVEL
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch(e) { 
+                console.error("Erro Auth:", e);
+                window.showToast("Erro de Autenticação: " + e.message, "error");
+            }
+        };
+        initAuth();
+
+        onAuthStateChanged(auth, (u) => {
+            currentUser = u;
+            if (currentUser) {
+                // 1. Escuta as Contagens em Tempo Real (Essencial para sincronizar os furos de stock)
+                const colRefContagens = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
+                onSnapshot(colRefContagens, (snapshot) => {
+                    const newContagens = [];
+                    snapshot.forEach(docSnap => { newContagens.push({ id: docSnap.id, ...docSnap.data() }); });
+                    contagens = newContagens.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+                    if (operadorAtual) window.render();
+                }, (error) => { console.error(error); });
+                
+                // Atualiza filtros com o catálogo que já temos guardado localmente
+                window.atualizarFiltrosDOM();
+            }
+        });
+
+        // FUNÇÃO DE SINC DO CATÁLOGO: Descarrega tudo da Nuvem para a memória de execução de forma direta e limpa!
+        window.sincronizarCatalogoNuvem = async function() {
+        const colRefCatalogRealtime = collection(db,'artifacts',appId,'public','data','catalogo');
+        onSnapshot(colRefCatalogRealtime,(snapshot)=>{
+            baseDados=[];
+            snapshot.forEach(d=>baseDados.push(d.data()));
+            window.render();
+            window.showToast("Catálogo sincronizado em tempo real","success");
+        });
+
+            if (!currentUser) return window.showToast("A aguardar ligação com a nuvem...", "error");
+            window.showToast("A sincronizar base de dados...", "info");
+            
+            try {
+                const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
+                const querySnapshot = await getDocs(colRefCatalog);
+                
+                const novosProdutos = [];
+                querySnapshot.forEach((docSnap) => {
+                    novosProdutos.push(docSnap.data());
+                });
+                
+                // CORREÇÃO CRÍTICA: Atualiza a variável global baseDados em tempo de execução para os operadores!
+                baseDados = novosProdutos;
+                
+                // Grava no localStorage para persistência física do telemóvel
+                localStorage.setItem('catalogo_local', JSON.stringify(baseDados));
+                
+                // Atualiza filtros e renderização do DOM em tempo real
+                window.atualizarFiltrosDOM();
+                if (operadorAtual) window.render();
+                
+                window.showToast(`Sincronizado! ${baseDados.length} produtos carregados.`, "success");
+                window.addLog(`Sincronizou catálogo (${baseDados.length} itens)`);
+                
+                // Oculta aviso de catálogo vazio no ecrã de auditoria
+                document.getElementById('alerta-catalogo-vazio').style.display = 'none';
+            } catch (error) {
+                console.error("Erro ao sincronizar catálogo:", error);
+                window.showToast("Falha ao descarregar o catálogo da nuvem.", "error");
+            }
+        }
+
+        // Atualizar filtros locais no DOM (Otimizado para ler dinamicamente)
+        window.atualizarFiltrosDOM = function() {
+            let locs = new Set();
+            let fams = new Set();
+            baseDados.forEach(item => {
+                if (item.local) locs.add(item.local);
+                if (item.familia) fams.add(item.familia);
+            });
+            
+            const statusEl = document.getElementById('status-catalog');
+            if (baseDados.length > 0) {
+                if (statusEl) {
+                    statusEl.innerText = `☁️ Catálogo Sincronizado: ${baseDados.length} itens.`;
+                    statusEl.style.color = 'var(--green)';
+                }
+                
+                document.getElementById('filtro-local-multi').innerHTML = Array.from(locs).sort().map((l, i) => `<div class="multi-select-item"><input type="checkbox" class="check-l" id="loc-${i}" value="${l}" checked><label for="loc-${i}">${l}</label></div>`).join('');
+                document.getElementById('filtro-familia-multi').innerHTML = Array.from(fams).sort().map((f, i) => `<div class="multi-select-item"><input type="checkbox" class="check-f" id="fam-${i}" value="${f}" checked><label for="fam-${i}">${f}</label></div>`).join('');
+                
+                // Oculta banner de erro se já houver produtos carregados localmente
+                document.getElementById('alerta-catalogo-vazio').style.display = 'none';
+            } else {
+                if (statusEl) {
+                    statusEl.innerText = "☁️ Catálogo Vazio localmente. Sincronize!";
+                    statusEl.style.color = 'var(--orange)';
+                }
+                
+                if (operadorAtual) {
+                    document.getElementById('alerta-catalogo-vazio').style.display = 'block';
+                }
+            }
+        }
+
+        // FUNÇÕES TORNADAS GLOBAIS PARA O HTML
+        window.checkLogin = function() {
+            if (operadorAtual) {
+                document.getElementById('view-login').style.display = 'none';
+                document.getElementById('view-app').style.display = 'block';
+                document.getElementById('lbl-operador').innerText = `${operadorAtual} (${cargoAtual})`;
+                
+                // Aplicar restrições com base no Cargo (Chefe vs Operador)
+                const isChefe = cargoAtual === 'CHEFE';
+                document.getElementById('chefe-export-area').style.display = isChefe ? 'flex' : 'none';
+                document.getElementById('chefe-limpar-btn').style.display = isChefe ? 'block' : 'none';
+                document.getElementById('chefe-buttons-area').style.display = isChefe ? 'grid' : 'none';
+                document.getElementById('chefe-pdf-btn').style.display = isChefe ? 'block' : 'none';
+                document.getElementById('chefe-upload-area').style.display = isChefe ? 'block' : 'none';
+
+                window.atualizarFiltrosDOM();
+                window.render();
+            } else {
+                document.getElementById('view-login').style.display = 'flex';
+                document.getElementById('view-app').style.display = 'none';
+                window.togglePinInput();
+            }
+        }
+        
+        window.fazerLogin = function() {
+            const nome = document.getElementById('login-nome').value.trim().toUpperCase();
+            const cargo = document.getElementById('login-cargo').value;
+            
+            if (!nome) return window.showToast('Digite a sua matrícula ou nome!', 'warning');
+            
+            if (cargo === 'CHEFE') {
+                const pin = document.getElementById('login-pin').value;
+                if (pin !== ADMIN_PIN) {
+                    return window.showToast('PIN do Chefe incorreto!', 'error');
+                }
+            }
+            
+            operadorAtual = nome;
+            cargoAtual = cargo;
+            localStorage.setItem('operador_atual', operadorAtual);
+            localStorage.setItem('cargo_atual', cargoAtual);
+            
+            window.checkLogin(); 
+            window.showToast(`Conectado como ${operadorAtual} (${cargoAtual})`, 'success');
+        }
+        
+        window.fazerLogout = function() {
+            if(confirm("Deseja sair da sessão atual?")) {
+                operadorAtual = '';
+                cargoAtual = 'OPERADOR';
+                localStorage.removeItem('operador_atual');
+                localStorage.removeItem('cargo_atual');
+                document.getElementById('login-nome').value = '';
+                document.getElementById('login-pin').value = '';
+                window.checkLogin();
+            }
+        }
+
+        window.toggleDarkMode = function() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            const toggle = document.getElementById('modal-theme-toggle');
+            if(toggle) toggle.checked = isDark;
+            localStorage.setItem('tema_escuro', isDark);
+        }
+        if(localStorage.getItem('tema_escuro') === 'true') {
+            document.body.classList.add('dark-mode');
+            const toggle = document.getElementById('modal-theme-toggle');
+            if(toggle) toggle.checked = true;
+        }
+
+        window.addLog = function(msg, type='info', op=operadorAtual) {
+            const time = new Date().toLocaleTimeString('pt-PT', {hour: '2-digit', minute:'2-digit'});
+            logAcoes.unshift({time, msg, type, op});
+            if(logAcoes.length > 5) logAcoes.pop();
+            const container = document.getElementById('log-container');
+            container.innerHTML = logAcoes.map(l => `<div class="log-entry"><span class="log-time">${l.time}</span><span class="log-msg"><span class="log-operador">${l.op}:</span> ${l.msg}</span></div>`).join('');
+        }
+
+        window.esteCalculo = function(el) {
+            try {
+                let expressao = el.value.replace(/[^0-9+\-*/().,]/g, '').replace(',', '.');
+                if(!expressao) return;
+                let resultado = Function('"use strict";return (' + expressao + ')')();
+                el.value = parseFloat(resultado).toFixed(2).replace(/\.00$/, '');
+            } catch (e) { window.showToast("Cálculo inválido", "warning"); }
+        }
+
+        window.showToast = function(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div'); toast.className = `toast ${type}`; toast.innerText = msg;
+            container.appendChild(toast); setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        window.playBeep = function(type = 'success') {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
+            if (type === 'success') { oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.1); } 
+            else { oscillator.type = 'square'; oscillator.frequency.setValueAtTime(300, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.3); }
+        }
+
+        window.abrirModalConfig = function() { document.getElementById('modal-config').style.display = "flex"; }
+        window.fecharModalConfig = function() { document.getElementById('modal-config').style.display = "none"; }
+        window.fecharModal = function() { document.getElementById('modal').style.display = "none"; indexEdicao = -1; diasParaVencer = null; }
+
+        window.getLocsSel = function() { return Array.from(document.querySelectorAll('.check-l:checked')).map(cb => cb.value); }
+
+        window.verPendentes = function() {
+            if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o chefe pode ver pendentes!", "error");
+            if(baseDados.length === 0) return window.showToast("Sincronize o catálogo primeiro!", "error");
+            const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
+            const pendentes = baseDados.filter(i => !contagens.some(c => c.codigo === i.codigo && c.local === i.local) && (lS.length === 0 || lS.includes(i.local)) && (fS.length === 0 || fS.includes(i.familia)));
+            const res = document.getElementById('resultados'); 
+            res.innerHTML = `<div style="padding:10px; font-weight:bold; background:var(--orange); color:#fff; text-align:center; border-radius:8px; margin-bottom:5px;">PENDENTES (${pendentes.length})</div>`;
+            pendentes.slice(0, 30).forEach(i => { 
+                const d = document.createElement('div'); d.className = 'item-res'; 
+                d.innerHTML = `<strong>${i.descricao}</strong><br><small style="color:var(--red);">PENDENTE EM: ${i.local}</small>`; 
+                d.onclick = () => { indexEdicao = -1; window.abrirModal(i, false); }; res.appendChild(d); 
+            });
+            document.getElementById('busca-input').value = ''; window.fecharModalConfig();
+        }
+
+        window.zerarNaoContados = async function() {
+            if (cargoAtual !== 'CHEFE') return window.showToast("Permissão negada!", "error");
+            if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
+            if(baseDados.length === 0) return window.showToast("Sincronize o catálogo primeiro!", "error");
+            const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
+            const pendentes = baseDados.filter(i => !contagens.some(c => c.codigo === i.codigo && c.local === i.local) && (lS.length === 0 || lS.includes(i.local)) && (fS.length === 0 || fS.includes(i.familia)));
+            if(pendentes.length === 0) return window.showToast("Nenhum pendente!", "info");
+            
+            if(confirm(`ZERAR o stock de ${pendentes.length} itens na NUVEM?`)) {
+                window.showToast("A enviar para a Nuvem...", "info");
+                const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
+                
+                // Usar writeBatch para zerar em lotes rápidos de 400 em telemóvel
+                let batch = writeBatch(db);
+                let opCount = 0;
+                let totalZeradados = 0;
+
+                for (const i of pendentes) {
+                    const docId = i.id || `${i.codigo}_${i.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
+                    const payload = {...i, fisico: 0, dif: 0 - i.sistema, cmc_unitario: i.cmc || 0, lote: "", validade: "", obs: "NÃO ENCONTRADO", operador: operadorAtual, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now()};
+                    
+                    batch.set(doc(colRef, docId), payload);
+                    opCount++;
+                    totalZeradados++;
+
+                    if (opCount >= 400) {
+                        await batch.commit();
+                        batch = writeBatch(db);
+                        opCount = 0;
+                    }
+                }
+
+                if (opCount > 0) {
+                    await batch.commit();
+                }
+
+                window.addLog(`Zerou ${totalZeradados} itens.`); window.showToast("Itens zerados!", "success"); window.fecharModalConfig();
+            }
+        }
+
+        window.excluirContagemEspecifica = async function() { 
+            if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o Chefe de Setor pode apagar contagens!", "error");
+            if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
+            if(indexEdicao !== -1 && confirm("APAGAR esta contagem da Nuvem?")) { 
+                const item = contagens[indexEdicao];
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'contagens', item.id));
+                window.addLog(`Apagado: ${item.descricao}`, 'error');
+                window.fecharModal(); 
+            } 
+        }
+
+        window.abrirModal = function(item, isNovo) {
+            itemAtual = item; const isCego = document.getElementById('modo-cego')?.checked;
+            document.getElementById('m-nome-edit').value = item.descricao; document.getElementById('m-nome-edit').readOnly = !isNovo;
+            document.getElementById('m-un-edit').value = item.unidade; document.getElementById('m-loc-cod').innerText = `📍 ${item.local} | CÓD: ${item.codigo}`;
+            document.getElementById('m-gtin').innerText = "GTIN: " + (item.gtin || "N/A");
+            
+            document.getElementById('modal-sist-area').style.display = isCego ? 'none' : 'block';
+            document.getElementById('m-sist-val').innerText = `SISTEMA: ${item.sistema} ${item.unidade}`;
+            document.getElementById('m-cmc-val').innerText = `CMC: R$ ${(item.cmc || 0).toFixed(2)}`;
+            
+            if(indexEdicao === -1) {
+                document.getElementById('m-qtd').value = ''; document.getElementById('m-lote').value = '';
+                document.getElementById('m-validade').value = ''; 
+                
+                const alertRed = document.getElementById('m-venc-alerta-red');
+                const alertOrange = document.getElementById('m-venc-alerta-orange');
+                if (alertRed) alertRed.style.display = 'none';
+                if (alertOrange) alertOrange.style.display = 'none';
+                
+                const idxAnt = contagens.findIndex(c => c.codigo === item.codigo && c.local === item.local);
+                document.getElementById('m-aviso-dup').style.display = idxAnt !== -1 ? 'block' : 'none';
+                document.getElementById('m-qtd-anterior').innerText = idxAnt !== -1 ? contagens[idxAnt].fisico : '';
+                document.getElementById('btn-salvar-normal').style.display = idxAnt !== -1 ? 'none' : 'block';
+                document.getElementById('botoes-duplicado').style.display = idxAnt !== -1 ? 'flex' : 'none';
+                document.getElementById('btn-excluir-item').style.display = 'none';
+            } else { 
+                document.getElementById('btn-excluir-item').style.display = cargoAtual === 'CHEFE' ? 'block' : 'none'; 
+            }
+            document.getElementById('modal').style.display = "flex"; setTimeout(() => document.getElementById('m-qtd').focus(), 300);
+        }
+
+        // SALVAMENTO ROBUSTO SEM RISCO DE TRAVAR O MODAL
+        window.salvarFinal = async function(modo) {
+            if (!currentUser) return window.showToast("A aguardar ligação à nuvem...", "error");
+            window.esteCalculo(document.getElementById('m-qtd')); 
+            const qVal = document.getElementById('m-qtd').value; 
+            if (!qVal) return window.showToast("Digite a Quantidade!", "warning");
+            let novaQtd = parseFloat(qVal);
+            
+            itemAtual.descricao = document.getElementById('m-nome-edit').value.toUpperCase(); 
+            itemAtual.unidade = document.getElementById('m-un-edit').value.toUpperCase();
+            let obs = document.getElementById('m-obs').value.toUpperCase();
+            
+            const idxAnt = contagens.findIndex(c => c.codigo === itemAtual.codigo && c.local === itemAtual.local);
+            let targetId = null;
+
+            if (indexEdicao !== -1) { 
+                targetId = contagens[indexEdicao].id; 
+            } else if (idxAnt !== -1) { 
+                targetId = contagens[idxAnt].id; 
+                if(modo === 'somar') novaQtd += contagens[idxAnt].fisico; 
+            }
+
+            const codRaw = itemAtual.codigo || 'MAN_' + Date.now();
+            const locRaw = itemAtual.local || 'MANUAL';
+            const docId = targetId || itemAtual.id || `${codRaw}_${locRaw}`.replace(/[^a-zA-Z0-9_-]/g, '');
+            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
+
+            const payload = {
+                ...itemAtual, 
+                fisico: novaQtd, 
+                dif: novaQtd - itemAtual.sistema, 
+                cmc_unitario: itemAtual.cmc || 0, 
+                lote: document.getElementById('m-lote').value.toUpperCase(), 
+                validade: document.getElementById('m-validade').value, 
+                obs: obs, 
+                operador: operadorAtual, 
+                data: new Date().toLocaleString('pt-PT'), 
+                timestamp: Date.now()
+            };
+            
+            // Etapa 1: Salva o documento no Firestore de forma direta
+            try {
+                await setDoc(doc(colRef, docId), payload);
+            } catch (e) {
+                console.error("Falha ao salvar no Firestore:", e);
+                window.showToast("Falha na Nuvem", "error");
+                return; // Interrompe o fluxo para que o utilizador não perca o dado no modal
+            }
+
+            // Etapa 2: Se salvou com sucesso, executa as atualizações de ecrã sob forte segurança
+            try {
+                // Fechar o modal imediatamente antes de qualquer outra tarefa visual secundária
+                window.fecharModal(); 
+                window.showToast("Nuvem Sincronizada", "success"); 
+                
+                // Grava o feed em tempo real de forma independente
+                window.addLog(`${modo === 'somar' ? '+' : ''} ${novaQtd}x ${itemAtual.descricao}`);
+                
+                // Limpa de forma segura o campo de pesquisa sem risco de crash no telemóvel (eliminada instrução .focus() bloqueadora)
+                const buscaInput = document.getElementById('busca-input');
+                if (buscaInput) buscaInput.value = '';
+                
+                const resultados = document.getElementById('resultados');
+                if (resultados) resultados.innerHTML = '';
+            } catch (uiError) {
+                console.error("Erro pós-salvamento de interface:", uiError);
+            }
+        }
+
+        window.render = function() {
+            if (!operadorAtual) return;
+            const b = document.getElementById('tabela-body'); const isCego = document.getElementById('modo-cego')?.checked;
+            const colSistElements = document.querySelectorAll('.col-sist');
+            colSistElements.forEach(el => el.style.display = isCego ? 'none' : 'table-cell');
+
+            let pT = 0; let financeiro = 0; let html = '';
+            contagens.forEach((i, idx) => {
+                pT += i.fisico; financeiro += (i.dif * i.cmc_unitario);
+                if (idx < 100) {
+                    html += `<tr onclick="editarContagem(${idx})">
+                        <td style="text-align:left;">${i.descricao}</td><td class="col-sist" style="display:${isCego?'none':'table-cell'}">${i.sistema}</td>
+                        <td style="font-weight:bold; color:var(--blue);">${i.fisico}</td>
+                        <td class="col-sist" style="display:${isCego?'none':'table-cell'}; color:${i.dif<0?'var(--red)':i.dif>0?'var(--green)':'inherit'};">${i.dif.toFixed(2)}</td>
+                        <td class="col-sist" style="display:${isCego?'none':'table-cell'}">${i.operador}</td>
+                    </tr>`;
+                }
+            });
+            if (contagens.length > 100) html += `<tr><td colspan="5" style="color:var(--gray); padding:15px;">Mostrando os últimos 100...</td></tr>`;
+            
+            b.innerHTML = html; document.getElementById('dash-skus').innerText = contagens.length; document.getElementById('dash-pecas').innerText = pT.toFixed(2);
+            document.getElementById('dash-financeiro').innerText = isCego ? "🛡️ Oculto" : "R$ " + financeiro.toLocaleString('pt-PT', {minimumFractionDigits: 2});
+            window.atualizarRelatorios();
+        }
+
+        window.mudarAba = function(aba) {
+            document.getElementById('view-auditoria').style.display = aba === 'auditoria' ? 'block' : 'none';
+            document.getElementById('view-relatorios').style.display = aba === 'relatorios' ? 'block' : 'none';
+            document.getElementById('tab-auditoria').className = aba === 'auditoria' ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('tab-relatorios').className = aba === 'relatorios' ? 'tab-btn active' : 'tab-btn';
+            if (aba === 'relatorios') window.atualizarRelatorios();
+        }
+
+        window.atualizarRelatorios = function() {
+            const totalBase = baseDados.length > 0 ? baseDados.length : contagens.length;
+            const totalContados = contagens.length;
+            let percentagem = totalBase === 0 ? 0 : Math.min(100, Math.round((totalContados / totalBase) * 100));
+            document.getElementById('progresso-texto').innerText = `${totalContados} / ${totalBase} Itens Contados`;
+            document.getElementById('progresso-percentagem').innerText = `${percentagem}%`; document.getElementById('progresso-barra').style.width = `${percentagem}%`;
+
+            let sobraFin = 0, quebraFin = 0; contagens.forEach(i => { const impacto = i.dif * i.cmc_unitario; if (i.dif > 0) sobraFin += impacto; else if (i.dif < 0) quebraFin += Math.abs(impacto); });
+            document.getElementById('rel-sobra-fin').innerText = "R$ " + sobraFin.toLocaleString('pt-PT', {minimumFractionDigits: 2});
+            document.getElementById('rel-quebra-fin').innerText = "R$ " + quebraFin.toLocaleString('pt-PT', {minimumFractionDigits: 2});
+
+            const furosBody = document.getElementById('tabela-furos-body');
+            const topFuros = [...contagens].filter(i => i.dif !== 0).sort((a, b) => Math.abs(b.dif * b.cmc_unitario) - Math.abs(a.dif * a.cmc_unitario)).slice(0, 5);
+            if (topFuros.length === 0) furosBody.innerHTML = `<tr><td colspan="3" style="color:var(--gray); padding:15px;">Sem divergências.</td></tr>`;
+            else furosBody.innerHTML = topFuros.map(i => { const impacto = i.dif * i.cmc_unitario; const cor = impacto > 0 ? 'color: var(--green)' : 'color: var(--red)'; return `<tr><td style="text-align: left; font-size: 10px;">${i.descricao.substring(0, 30)}...</td><td style="font-weight: bold; ${cor}">${i.dif > 0 ? '+'+i.dif : i.dif}</td><td style="font-weight: bold; ${cor}">R$ ${Math.abs(impacto).toLocaleString('pt-PT', {minimumFractionDigits: 2})}</td></tr>`; }).join('');
+
+            const chartContainer = document.getElementById('chart-familias');
+            const familiasObj = {}; contagens.forEach(i => { const fam = i.familia || 'SEM FAMÍLIA'; if (!familiasObj[fam]) familiasObj[fam] = 0; familiasObj[fam] += i.fisico; });
+            const topFamilias = Object.keys(familiasObj).map(k => ({ familia: k, qtd: familiasObj[k] })).sort((a, b) => b.qtd - a.qtd).slice(0, 5);
+            if (topFamilias.length === 0) chartContainer.innerHTML = '<p style="font-size:12px; color:var(--gray); text-align:center; margin: 0;">A aguardar dados...</p>';
+            else { const maxQtd = topFamilias[0].qtd; chartContainer.innerHTML = topFamilias.map(f => { const widthPct = maxQtd > 0 ? (f.qtd / maxQtd) * 100 : 0; return `<div class="chart-row"><div class="chart-label" title="${f.familia}">${f.familia}</div><div class="chart-bar-container"><div class="chart-bar" style="width: ${widthPct}%"></div></div><div class="chart-value">${f.qtd.toLocaleString('pt-PT', {maximumFractionDigits: 2})}</div></div>`; }).join(''); }
+        }
+
+        window.imprimirPDF = function() { 
+            if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o Chefe de Setor pode gerar PDF!", "error");
+            document.getElementById('print-data').innerText = "Gerado em: " + new Date().toLocaleString('pt-PT'); 
+            window.print(); 
+        }
+        
+        window.editarContagem = function(idx) { 
+            indexEdicao = idx; 
+            window.abrirModal(contagens[idx], false); 
+            document.getElementById('m-qtd').value = contagens[idx].fisico; 
+            document.getElementById('m-lote').value = contagens[idx].lote || ''; 
+            document.getElementById('m-validade').value = contagens[idx].validade || ''; 
+            document.getElementById('m-obs').value = contagens[idx].obs || ''; 
+        }
+        
+        window.baixarExcel = function(t) { 
+            if (cargoAtual !== 'CHEFE') return window.showToast("Erro: Permissão apenas para o Chefe de Setor!", "error");
+            if (contagens.length === 0) return window.showToast("Sem dados para exportar.", "warning"); 
+            const ws = XLSX.utils.json_to_sheet(t === 'erros' ? contagens.filter(i => i.dif !== 0) : contagens); 
+            const wb = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(wb, ws, "Auditoria"); 
+            XLSX.writeFile(wb, `Inventario_${cargoAtual}_${new Date().toLocaleDateString('pt-PT').replace(/\//g,'-')}.xlsx`); 
+        }
+        
+        window.limparTudo = async function() { 
+            if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o chefe do setor pode reiniciar a auditoria!", "error");
+            if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
+            if(confirm("APAGAR TUDO DA NUVEM? Esta ação irá eliminar as contagens de toda a equipa e o catálogo.")) { 
+                window.showToast("A limpar dados da nuvem...", "info");
+                
+                // Limpa contagens em lotes rápidos
+                let batch = writeBatch(db);
+                let opCount = 0;
+                
+                for(const c of contagens) { 
+                    batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'contagens', c.id));
+                    opCount++;
+                    if (opCount >= 400) {
+                        await batch.commit();
+                        batch = writeBatch(db);
+                        opCount = 0;
+                    }
+                }
+                
+                // Limpa catálogo em lotes rápidos
+                const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
+                for(const b of baseDados) {
+                    const docId = b.id || `${b.codigo}_${b.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
+                    batch.delete(doc(colRefCatalog, docId)); // CORRIGIDO: Referência correta colRefCatalog
+                    opCount++;
+                    if (opCount >= 400) {
+                        await batch.commit();
+                        batch = writeBatch(db);
+                        opCount = 0;
+                    }
+                }
+                
+                if (opCount > 0) {
+                    await batch.commit();
+                }
+                
+                // Limpa localmente também
+                baseDados = [];
+                localStorage.removeItem('catalogo_local');
+                window.atualizarFiltrosDOM();
+                
+                window.addLog("Auditoria limpa e reiniciada", "warning"); 
+                window.fecharModalConfig();
+            } 
+        }
+
+        window.controlarCamera = async function() {
+            if (!currentUser) return window.showToast("A aguardar ligação à nuvem...", "error");
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const btn = document.getElementById('btn-cam');
+            if (btn.innerText.includes("LIGAR")) {
+                document.getElementById('reader').style.display = "block"; btn.innerText = "🛑 PARAR"; btn.className = "btn-red";
+                if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+                try {
+                    await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, async (txt) => {
+                        if(window.lastScan === txt && Date.now() - window.lastScanTime < 2000) return;
+                        window.lastScan = txt; window.lastScanTime = Date.now();
+                        const cod = txt.trim().toUpperCase(); const itemBase = baseDados.find(i => i.codigo === cod || i.gtin === cod);
+                        const isContinuo = document.getElementById('modo-continuo').checked;
+
+                        if (isContinuo) {
+                            window.playBeep('success'); let itemContado = contagens.find(c => c.codigo === cod || c.gtin === cod);
+                            const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
+                            if (itemContado) {
+                                const payload = {...itemContado, fisico: itemContado.fisico + 1, dif: (itemContado.fisico + 1) - itemContado.sistema, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now(), operador: operadorAtual};
+                                await setDoc(doc(colRef, itemContado.id), payload);
+                                window.addLog(`+1 Auto: ${itemContado.descricao}`); window.showToast(`+1 ${itemContado.descricao}`, 'success');
+                            } else {
+                                let novoItem = itemBase || {codigo: cod, gtin: cod, descricao: "PRODUTO DESCONHECIDO", local: "SCAN", sistema: 0, cmc: 0, unidade: "UN"};
+                                const docId = novoItem.id || `${novoItem.codigo}_${novoItem.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
+                                const payload = {...novoItem, fisico: 1, dif: 1 - novoItem.sistema, cmc_unitario: novoItem.cmc || 0, lote: "", validade: "", obs: "MODO CONTÍNUO", operador: operadorAtual, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now()};
+                                await setDoc(doc(colRef, docId), payload);
+                                window.addLog(`Novo Auto: ${novoItem.descricao}`); window.showToast(`Adicionado: ${novoItem.descricao}`, 'success');
+                            }
+                        } else {
+                            window.playBeep('success'); window.desligarCam(); indexEdicao = -1; 
+                            let itemModal = itemBase || {codigo: cod, gtin: cod, descricao: "NOVO PRODUTO", local: "SCAN", sistema: 0, cmc: 0, unidade: "UN"};
+                            window.abrirModal(itemModal, itemModal.descricao === "NOVO PRODUTO");
+                        }
+                    });
+                } catch (err) { window.showToast("Falha na câmara.", "error"); window.desligarCam(); }
+            } else { window.desligarCam(); }
+        }
+        
+        window.desligarCam = function() { 
+            const resetUI = () => { document.getElementById('reader').style.display = "none"; document.getElementById('btn-cam').innerText = "📷 LIGAR SCANNER"; document.getElementById('btn-cam').className = "btn-blue"; };
+            if (html5QrCode) { try { const stopPromise = html5QrCode.stop(); if (stopPromise) { stopPromise.then(() => resetUI()).catch(() => resetUI()); } else { resetUI(); } } catch (err) { resetUI(); } } else { resetUI(); }
+        }
+
+        // OUTROS EVENTOS DOM
+        document.getElementById('busca-input').oninput = function() {
+            const t = this.value.toUpperCase().trim(); const res = document.getElementById('resultados'); res.innerHTML = '';
+            if (t.length < 1) return;
+            const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
+            const fil = baseDados.filter(i => (i.descricao.includes(t) || i.codigo.includes(t) || i.gtin.includes(t)) && (lS.length === 0 || lS.includes(i.local)) && (fS.length === 0 || fS.includes(i.familia)));
+            if (fil.length > 0) {
+                fil.slice(0, 15).forEach(i => {
+                    const d = document.createElement('div'); d.className = 'item-res'; d.innerHTML = `<strong>${i.descricao}</strong><br><small style="color:var(--gray)">${i.local} | SIST: ${i.sistema}</small>`;
+                    d.onclick = () => { indexEdicao = -1; window.abrirModal(i, false); }; res.appendChild(d);
+                });
+            } else {
+                const btnNovo = document.createElement('button'); btnNovo.className = 'btn-blue'; btnNovo.style.marginTop = '10px'; btnNovo.innerHTML = `➕ NOVO PRODUTO: "${t}"`;
+                btnNovo.onclick = () => { indexEdicao = -1; window.abrirModal({codigo:'MAN_'+Date.now(), gtin:t, descricao:t, local: lS.length > 0 ? lS[0] : 'MANUAL', familia:'SEM FAMÍLIA', sistema:0, cmc:0, unidade:'UN'}, true); }; res.appendChild(btnNovo);
+            }
+        };
+
+        // CHEFE SELECIONA PLANILHA: PROCESSA LOCAIS E FAMÍLIAS SEM SUBIR AINDA
+        document.getElementById('file-input').onchange = function(e) {
+            if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o Chefe de Setor pode importar dados!", "error");
+            if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
+            
+            if (!e.target.files || e.target.files.length === 0) return;
+            
+            window.showToast("A processar dados da folha...", "info"); 
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
+                    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {header: 1});
+                    let idxCod=-1, idxDesc=-1, idxFam=-1, idxSist=-1, idxLoc=-1, idxCmc=-1, idxUn=-1, idxGtin=-1, hRow=-1;
+                    
+                    for(let r=0; r<rows.length; r++) {
+                        if(!rows[r]) continue; let line = rows[r].map(c => String(c || "").toUpperCase().trim());
+                        if(line.includes("CÓDIGO DO PRODUTO") || line.includes("DESCRIÇÃO DO PRODUTO")) {
+                            hRow = r; line.forEach((cell, c) => {
+                                if(cell.includes("CÓDIGO DO PRODUTO")) idxCod = c; else if(cell.includes("CÓDIGO EAN")) idxGtin = c;
+                                if(cell.includes("DESCRIÇÃO DO PRODUTO")) idxDesc = c; if(cell.includes("FAMÍLIA DE PRODUTO")) idxFam = c;
+                                if(cell === "QUANTIDADE") idxSist = c; if(cell.includes("DESCRIÇÃO DO LOCAL")) idxLoc = c;
+                                if(cell.includes("CMC UNITÁRIO")) idxCmc = c; if(cell.includes("UNIDADE")) idxUn = c;
+                            }); break; 
+                        }
+                    }
+                    
+                    if (idxDesc === -1) {
+                        window.showToast("Coluna 'DESCRIÇÃO DO PRODUTO' não encontrada!", "error");
+                        return;
+                    }
+
+                    // Processamos para a memória temporária
+                    itensTemporariosExcel = [];
+                    let preLocais = new Set();
+                    let preFamilias = new Set();
+                    let localCounter = 0;
+
+                    for(let r=hRow+1; r<rows.length; r++) {
+                        let row = rows[r]; 
+                        if (row && row[idxDesc]) {
+                            localCounter++;
+                            const l = idxLoc !== -1 ? String(row[idxLoc] || 'ESTOQUE PRINCIPAL').trim().toUpperCase() : 'ESTOQUE PRINCIPAL'; 
+                            const f = idxFam !== -1 ? String(row[idxFam] || 'SEM FAMÍLIA').trim().toUpperCase() : 'SEM FAMÍLIA';
+                            
+                            preLocais.add(l);
+                            preFamilias.add(f);
+
+                            const codRaw = idxCod !== -1 ? String(row[idxCod] || '').trim().toUpperCase() : '';
+                            const idUnico = `${codRaw}_${l}_L${localCounter}`.replace(/[^a-zA-Z0-9_-]/g, '');
+
+                            itensTemporariosExcel.push({ 
+                                id: idUnico,
+                                codigo: codRaw, 
+                                descricao: String(row[idxDesc]).trim().toUpperCase(), 
+                                gtin: idxGtin !== -1 ? String(row[idxGtin] || '').trim() : '', 
+                                familia: f, 
+                                local: l, 
+                                sistema: parseFloat(String(row[idxSist]).replace(',','.')) || 0, 
+                                cmc: parseFloat(String(row[idxCmc]).replace(',','.')) || 0, 
+                                unidade: String(row[idxUn] || 'UN').trim().toUpperCase() 
+                            });
+                        }
+                    }
+
+                    if (itensTemporariosExcel.length === 0) {
+                        window.showToast("Nenhum produto válido encontrado!", "error");
+                        return;
+                    }
+
+                    // Preenche a caixa de seleção de Locais Pré-Importação no HTML
+                    const preLocBox = document.getElementById('pre-locais-box');
+                    preLocBox.innerHTML = Array.from(preLocais).sort().map((l, i) => `
+                        <div class="multi-select-item">
+                            <input type="checkbox" class="pre-check-l" id="pre-loc-${i}" value="${l}" checked>
+                            <label for="pre-loc-${i}">${l}</label>
+                        </div>
+                    `).join('');
+
+                    // Preenche a caixa de seleção de Famílias Pré-Importação no HTML
+                    const preFamBox = document.getElementById('pre-familias-box');
+                    preFamBox.innerHTML = Array.from(preFamilias).sort().map((f, i) => `
+                        <div class="multi-select-item">
+                            <input type="checkbox" class="pre-check-f" id="pre-fam-${i}" value="${f}" checked>
+                            <label for="pre-fam-${i}">${f}</label>
+                        </div>
+                    `).join('');
+
+                    // Mostra o painel de filtros e foca o ecrã do utilizador
+                    document.getElementById('pre-import-filters').style.display = 'block';
+                    window.showToast("Planilha processada! Selecione os filtros para enviar.", "success");
+
+                } catch (error) {
+                    console.error("Erro ao ler Excel:", error);
+                    window.showToast("Erro ao processar planilha.", "error");
+                }
+            };
+            reader.readAsArrayBuffer(e.target.files[0]);
+        };
+
+        // Função utilitária para aguardar um pequeno intervalo (previne bloqueio de execução móvel)
+        const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+        // ENVIAR SELECIONADOS: Executado após o chefe clicar no botão "ENVIAR SELECIONADOS"
+        document.getElementById('btn-confirmar-subida').onclick = async function() {
+            if (cargoAtual !== 'CHEFE') return window.showToast("Operação não permitida!", "error");
+            if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
+            if (itensTemporariosExcel.length === 0) return window.showToast("Selecione uma planilha válida!", "warning");
+
+            // Obtém listas selecionadas das caixas de filtro pré-importação
+            const preLocsEscolhidos = Array.from(document.querySelectorAll('.pre-check-l:checked')).map(cb => cb.value);
+            const preFamsEscolhidas = Array.from(document.querySelectorAll('.pre-check-f:checked')).map(cb => cb.value);
+
+            if (preLocsEscolhidos.length === 0) return window.showToast("Selecione pelo menos um Local!", "warning");
+            if (preFamsEscolhidas.length === 0) return window.showToast("Selecione pelo menos uma Família!", "warning");
+
+            // Filtra os itens temporários conforme as seleções feitas
+            const itensParaSubir = itensTemporariosExcel.filter(item => 
+                preLocsEscolhidos.includes(item.local) && preFamsEscolhidas.includes(item.familia)
+            );
+
+            if (itensParaSubir.length === 0) {
+                return window.showToast("Nenhum produto corresponde aos filtros escolhidos!", "warning");
+            }
+
+            if (!confirm(`Confirmar o envio de ${itensParaSubir.length} produtos filtrados para a Nuvem?`)) return;
+
+            window.showToast(`Preparados ${itensParaSubir.length} itens. A enviar...`, "info");
+            const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
+
+            try {
+                // Dividimos a lista de produtos em "chunks" (pedaços) exatos de 400 itens
+                const chunkSize = 499;
+                for (let i = 0; i < itensParaSubir.length; i += chunkSize) {
+                    const chunk = itensParaSubir.slice(i, i + chunkSize);
+                    const batch = writeBatch(db);
+
+                    chunk.forEach(item => {
+                        batch.set(doc(colRefCatalog, item.id), item);
+                    });
+
+                    // Envia o lote de 400 produtos de forma robusta e aguarda confirmação da rede
+                    await batch.commit();
+                    
+                    // Adicionado delay de 250ms para evitar que o telemóvel cancele a transação por sobrecarga
+                    await delay(80);
+
+                    // CORREÇÃO: Usar a variável do escopo correto 'itensParaSubir' para evitar o travamento
+                    const progresso = Math.min(100, Math.round(((i + chunk.length) / itensParaSubir.length) * 100));
+                    window.showToast(`A enviar catálogo... ${progresso}% concluído.`, "info");
+                }
+
+                window.showToast(`Sucesso! ${itensParaSubir.length} itens salvos na nuvem.`, "success");
+                window.addLog(`Catálogo filtrado carregado na Nuvem (${itensParaSubir.length} itens)`);
+
+                // Limpa variáveis temporárias de interface
+                itensTemporariosExcel = [];
+                document.getElementById('pre-import-filters').style.display = 'none';
+                document.getElementById('file-input').value = '';
+
+                // Sincroniza o catálogo local de imediato de forma nativa e força a leitura
+                await window.sincronizarCatalogoNuvem();
+                window.fecharModalConfig();
+
+            } catch (error) {
+                console.error("Erro ao subir lote:", error);
+                window.showToast("Erro ao sincronizar lote com a nuvem.", "error");
+            }
+        };
+
+        window.checkLogin();
+    </script>
+</body>
+</html>
