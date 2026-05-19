@@ -503,6 +503,14 @@
 
         // FUNÇÃO DE SINC DO CATÁLOGO: Descarrega tudo da Nuvem para a memória de execução de forma direta e limpa!
         window.sincronizarCatalogoNuvem = async function() {
+        const colRefCatalogRealtime = collection(db,'artifacts',appId,'public','data','catalogo');
+        onSnapshot(colRefCatalogRealtime,(snapshot)=>{
+            baseDados=[];
+            snapshot.forEach(d=>baseDados.push(d.data()));
+            window.render();
+            window.showToast("Catálogo sincronizado em tempo real","success");
+        });
+
             if (!currentUser) return window.showToast("A aguardar ligação com a nuvem...", "error");
             window.showToast("A sincronizar base de dados...", "info");
             
@@ -663,11 +671,10 @@
             container.appendChild(toast); setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
         }
 
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-const audioCtx = AudioCtx ? new AudioCtx() : null;
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         window.playBeep = function(type = 'success') {
-            if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-            if(!audioCtx) return; const oscillator = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator(); const gainNode = audioCtx.createGain();
             oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
             if (type === 'success') { oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(800, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.1); } 
             else { oscillator.type = 'square'; oscillator.frequency.setValueAtTime(300, audioCtx.currentTime); gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime); oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.3); }
@@ -757,7 +764,7 @@ const audioCtx = AudioCtx ? new AudioCtx() : null;
             
             if(indexEdicao === -1) {
                 document.getElementById('m-qtd').value = ''; document.getElementById('m-lote').value = '';
-                document.getElementById('m-validade').value = ''; document.getElementById('m-obs').value=''; 
+                document.getElementById('m-validade').value = ''; 
                 
                 const alertRed = document.getElementById('m-venc-alerta-red');
                 const alertOrange = document.getElementById('m-venc-alerta-orange');
@@ -974,7 +981,7 @@ const audioCtx = AudioCtx ? new AudioCtx() : null;
 
         window.controlarCamera = async function() {
             if (!currentUser) return window.showToast("A aguardar ligação à nuvem...", "error");
-            if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+            if(audioCtx.state === 'suspended') audioCtx.resume();
             const btn = document.getElementById('btn-cam');
             if (btn.innerText.includes("LIGAR")) {
                 document.getElementById('reader').style.display = "block"; btn.innerText = "🛑 PARAR"; btn.className = "btn-red";
@@ -1177,7 +1184,7 @@ const audioCtx = AudioCtx ? new AudioCtx() : null;
                     await batch.commit();
                     
                     // Adicionado delay de 250ms para evitar que o telemóvel cancele a transação por sobrecarga
-                    await delay(50);
+                    await delay(80);
 
                     // CORREÇÃO: Usar a variável do escopo correto 'itensParaSubir' para evitar o travamento
                     const progresso = Math.min(100, Math.round(((i + chunk.length) / itensParaSubir.length) * 100));
