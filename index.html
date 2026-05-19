@@ -1,4 +1,4 @@
-=<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
@@ -833,7 +833,7 @@
                 // Grava o feed em tempo real de forma independente
                 window.addLog(`${modo === 'somar' ? '+' : ''} ${novaQtd}x ${itemAtual.descricao}`);
                 
-                // Limpa de forma segura o campo de pesquisa sem risco de crash no telemóvel
+                // Limpa de forma segura o campo de pesquisa sem risco de crash no telemóvel (eliminada instrução .focus() bloqueadora)
                 const buscaInput = document.getElementById('busca-input');
                 if (buscaInput) buscaInput.value = '';
                 
@@ -948,7 +948,7 @@
                 const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
                 for(const b of baseDados) {
                     const docId = b.id || `${b.codigo}_${b.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
-                    batch.delete(doc(colRefCatalog, docId));
+                    batch.delete(doc(colRefCatalog, docId)); // CORRIGIDO: Referência correta colRefCatalog
                     opCount++;
                     if (opCount >= 400) {
                         await batch.commit();
