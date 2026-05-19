@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+=<!DOCTYPE html>
 <html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
@@ -1178,7 +1178,7 @@
                     // Adicionado delay de 250ms para evitar que o telemóvel cancele a transação por sobrecarga
                     await delay(250);
 
-                    // CORREÇÃO DEFENSIVA: o cálculo de progresso agora lê dinamicamente itensParaSubir.length!
+                    // CORREÇÃO: Usar a variável do escopo correto 'itensParaSubir' para evitar o travamento
                     const progresso = Math.min(100, Math.round(((i + chunk.length) / itensParaSubir.length) * 100));
                     window.showToast(`A enviar catálogo... ${progresso}% concluído.`, "info");
                 }
