@@ -364,7 +364,7 @@
             <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📍 LOCAIS (FILTRAR):</label>
             <div id="filtro-local-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Sincronize o catálogo para ver locais...</small></div>
             <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📂 FAMÍLIAS (FILTRAR):</label>
-            <div id="filtro-familia-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Sincronize o catálogo para ver famílias...</small></div>
+            <div id="filtro-family-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Sincronize o catálogo para ver famílias...</small></div>
             
             <!-- Botões Administrativos: Apenas para Chefe -->
             <div id="chefe-buttons-area" class="grid-buttons" style="display:none;">
@@ -503,14 +503,6 @@
 
         // FUNÇÃO DE SINC DO CATÁLOGO: Descarrega tudo da Nuvem para a memória de execução de forma direta e limpa!
         window.sincronizarCatalogoNuvem = async function() {
-        const colRefCatalogRealtime = collection(db,'artifacts',appId,'public','data','catalogo');
-        onSnapshot(colRefCatalogRealtime,(snapshot)=>{
-            baseDados=[];
-            snapshot.forEach(d=>baseDados.push(d.data()));
-            window.render();
-            window.showToast("Catálogo sincronizado em tempo real","success");
-        });
-
             if (!currentUser) return window.showToast("A aguardar ligação com a nuvem...", "error");
             window.showToast("A sincronizar base de dados...", "info");
             
@@ -852,27 +844,43 @@
             }
         }
 
+        // MOTOR DE RENDERIZAÇÃO BLINDADO A 100% CONTRA VALORES INEXISTENTES OU NaN
         window.render = function() {
             if (!operadorAtual) return;
-            const b = document.getElementById('tabela-body'); const isCego = document.getElementById('modo-cego')?.checked;
+            const b = document.getElementById('tabela-body'); 
+            if (!b) return;
+            const isCego = document.getElementById('modo-cego')?.checked;
             const colSistElements = document.querySelectorAll('.col-sist');
             colSistElements.forEach(el => el.style.display = isCego ? 'none' : 'table-cell');
 
-            let pT = 0; let financeiro = 0; let html = '';
+            let pT = 0; 
+            let financeiro = 0; 
+            let html = '';
+            
             contagens.forEach((i, idx) => {
-                pT += i.fisico; financeiro += (i.dif * i.cmc_unitario);
+                const fisico = Number(i.fisico) || 0;
+                const sistema = Number(i.sistema) || 0;
+                const dif = Number(i.dif) || (fisico - sistema);
+                const cmc = Number(i.cmc_unitario) || Number(i.cmc) || 0;
+                
+                pT += fisico; 
+                financeiro += (dif * cmc);
+                
                 if (idx < 100) {
                     html += `<tr onclick="editarContagem(${idx})">
-                        <td style="text-align:left;">${i.descricao}</td><td class="col-sist" style="display:${isCego?'none':'table-cell'}">${i.sistema}</td>
-                        <td style="font-weight:bold; color:var(--blue);">${i.fisico}</td>
-                        <td class="col-sist" style="display:${isCego?'none':'table-cell'}; color:${i.dif<0?'var(--red)':i.dif>0?'var(--green)':'inherit'};">${i.dif.toFixed(2)}</td>
-                        <td class="col-sist" style="display:${isCego?'none':'table-cell'}">${i.operador}</td>
+                        <td style="text-align:left;">${i.descricao || 'PRODUTO SEM NOME'}</td>
+                        <td class="col-sist" style="display:${isCego?'none':'table-cell'}">${sistema}</td>
+                        <td style="font-weight:bold; color:var(--blue);">${fisico}</td>
+                        <td class="col-sist" style="display:${isCego?'none':'table-cell'}; color:${dif<0?'var(--red)':dif>0?'var(--green)':'inherit'};">${dif.toFixed(2)}</td>
+                        <td class="col-sist" style="display:${isCego?'none':'table-cell'}">${i.operador || 'SEM OPERADOR'}</td>
                     </tr>`;
                 }
             });
             if (contagens.length > 100) html += `<tr><td colspan="5" style="color:var(--gray); padding:15px;">Mostrando os últimos 100...</td></tr>`;
             
-            b.innerHTML = html; document.getElementById('dash-skus').innerText = contagens.length; document.getElementById('dash-pecas').innerText = pT.toFixed(2);
+            b.innerHTML = html; 
+            document.getElementById('dash-skus').innerText = contagens.length; 
+            document.getElementById('dash-pecas').innerText = pT.toFixed(2);
             document.getElementById('dash-financeiro').innerText = isCego ? "🛡️ Oculto" : "R$ " + financeiro.toLocaleString('pt-PT', {minimumFractionDigits: 2});
             window.atualizarRelatorios();
         }
@@ -885,27 +893,85 @@
             if (aba === 'relatorios') window.atualizarRelatorios();
         }
 
+        // MOTOR DE RELATÓRIOS TOTALMENTE PROTEGIDO CONTRA ERROS DE TIPO (PREVINE TRAVAMENTO EM MÓVEL)
         window.atualizarRelatorios = function() {
             const totalBase = baseDados.length > 0 ? baseDados.length : contagens.length;
             const totalContados = contagens.length;
             let percentagem = totalBase === 0 ? 0 : Math.min(100, Math.round((totalContados / totalBase) * 100));
             document.getElementById('progresso-texto').innerText = `${totalContados} / ${totalBase} Itens Contados`;
-            document.getElementById('progresso-percentagem').innerText = `${percentagem}%`; document.getElementById('progresso-barra').style.width = `${percentagem}%`;
+            document.getElementById('progresso-percentagem').innerText = `${percentagem}%`; 
+            document.getElementById('progresso-barra').style.width = `${percentagem}%`;
 
-            let sobraFin = 0, quebraFin = 0; contagens.forEach(i => { const impacto = i.dif * i.cmc_unitario; if (i.dif > 0) sobraFin += impacto; else if (i.dif < 0) quebraFin += Math.abs(impacto); });
+            let sobraFin = 0, quebraFin = 0; 
+            contagens.forEach(i => { 
+                const fisico = Number(i.fisico) || 0;
+                const sistema = Number(i.sistema) || 0;
+                const dif = Number(i.dif) || (fisico - sistema);
+                const cmc = Number(i.cmc_unitario) || Number(i.cmc) || 0;
+                const impacto = dif * cmc; 
+                if (dif > 0) sobraFin += impacto; 
+                else if (dif < 0) quebraFin += Math.abs(impacto); 
+            });
             document.getElementById('rel-sobra-fin').innerText = "R$ " + sobraFin.toLocaleString('pt-PT', {minimumFractionDigits: 2});
             document.getElementById('rel-quebra-fin').innerText = "R$ " + quebraFin.toLocaleString('pt-PT', {minimumFractionDigits: 2});
 
             const furosBody = document.getElementById('tabela-furos-body');
-            const topFuros = [...contagens].filter(i => i.dif !== 0).sort((a, b) => Math.abs(b.dif * b.cmc_unitario) - Math.abs(a.dif * a.cmc_unitario)).slice(0, 5);
-            if (topFuros.length === 0) furosBody.innerHTML = `<tr><td colspan="3" style="color:var(--gray); padding:15px;">Sem divergências.</td></tr>`;
-            else furosBody.innerHTML = topFuros.map(i => { const impacto = i.dif * i.cmc_unitario; const cor = impacto > 0 ? 'color: var(--green)' : 'color: var(--red)'; return `<tr><td style="text-align: left; font-size: 10px;">${i.descricao.substring(0, 30)}...</td><td style="font-weight: bold; ${cor}">${i.dif > 0 ? '+'+i.dif : i.dif}</td><td style="font-weight: bold; ${cor}">R$ ${Math.abs(impacto).toLocaleString('pt-PT', {minimumFractionDigits: 2})}</td></tr>`; }).join('');
+            if (furosBody) {
+                const topFuros = [...contagens].filter(i => {
+                    const fisico = Number(i.fisico) || 0;
+                    const sistema = Number(i.sistema) || 0;
+                    const dif = Number(i.dif) || (fisico - sistema);
+                    return dif !== 0;
+                }).sort((a, b) => {
+                    const difA = Number(a.dif) || 0;
+                    const cmcA = Number(a.cmc_unitario) || 0;
+                    const difB = Number(b.dif) || 0;
+                    const cmcB = Number(b.cmc_unitario) || 0;
+                    return Math.abs(difB * cmcB) - Math.abs(difA * cmcA);
+                }).slice(0, 5);
+
+                if (topFuros.length === 0) {
+                    furosBody.innerHTML = `<tr><td colspan="3" style="color:var(--gray); padding:15px;">Sem divergências.</td></tr>`;
+                } else {
+                    furosBody.innerHTML = topFuros.map(i => { 
+                        const fisico = Number(i.fisico) || 0;
+                        const sistema = Number(i.sistema) || 0;
+                        const dif = Number(i.dif) || (fisico - sistema);
+                        const cmc = Number(i.cmc_unitario) || Number(i.cmc) || 0;
+                        const impacto = dif * cmc; 
+                        const cor = impacto > 0 ? 'color: var(--green)' : 'color: var(--red)'; 
+                        return `<tr>
+                            <td style="text-align: left; font-size: 10px;">${(i.descricao || '').substring(0, 30)}...</td>
+                            <td style="font-weight: bold; ${cor}">${dif > 0 ? '+' + dif : dif}</td>
+                            <td style="font-weight: bold; ${cor}">R$ ${Math.abs(impacto).toLocaleString('pt-PT', {minimumFractionDigits: 2})}</td>
+                        </tr>`; 
+                    }).join('');
+                }
+            }
 
             const chartContainer = document.getElementById('chart-familias');
-            const familiasObj = {}; contagens.forEach(i => { const fam = i.familia || 'SEM FAMÍLIA'; if (!familiasObj[fam]) familiasObj[fam] = 0; familiasObj[fam] += i.fisico; });
-            const topFamilias = Object.keys(familiasObj).map(k => ({ familia: k, qtd: familiasObj[k] })).sort((a, b) => b.qtd - a.qtd).slice(0, 5);
-            if (topFamilias.length === 0) chartContainer.innerHTML = '<p style="font-size:12px; color:var(--gray); text-align:center; margin: 0;">A aguardar dados...</p>';
-            else { const maxQtd = topFamilias[0].qtd; chartContainer.innerHTML = topFamilias.map(f => { const widthPct = maxQtd > 0 ? (f.qtd / maxQtd) * 100 : 0; return `<div class="chart-row"><div class="chart-label" title="${f.familia}">${f.familia}</div><div class="chart-bar-container"><div class="chart-bar" style="width: ${widthPct}%"></div></div><div class="chart-value">${f.qtd.toLocaleString('pt-PT', {maximumFractionDigits: 2})}</div></div>`; }).join(''); }
+            if (chartContainer) {
+                const familiasObj = {}; 
+                contagens.forEach(i => { 
+                    const fam = i.familia || 'SEM FAMÍLIA'; 
+                    if (!familiasObj[fam]) familiasObj[fam] = 0; 
+                    familiasObj[fam] += (Number(i.fisico) || 0); 
+                });
+                const topFamilias = Object.keys(familiasObj).map(k => ({ familia: k, qtd: familiasObj[k] })).sort((a, b) => b.qtd - a.qtd).slice(0, 5);
+                if (topFamilias.length === 0) {
+                    chartContainer.innerHTML = '<p style="font-size:12px; color:var(--gray); text-align:center; margin: 0;">A aguardar dados...</p>';
+                } else { 
+                    const maxQtd = topFamilias[0].qtd; 
+                    chartContainer.innerHTML = topFamilias.map(f => { 
+                        const widthPct = maxQtd > 0 ? (f.qtd / maxQtd) * 100 : 0; 
+                        return `<div class="chart-row">
+                            <div class="chart-label" title="${f.familia}">${f.familia}</div>
+                            <div class="chart-bar-container"><div class="chart-bar" style="width: ${widthPct}%"></div></div>
+                            <div class="chart-value">${f.qtd.toLocaleString('pt-PT', {maximumFractionDigits: 2})}</div>
+                        </div>`; 
+                    }).join(''); 
+                }
+            }
         }
 
         window.imprimirPDF = function() { 
@@ -1171,7 +1237,7 @@
 
             try {
                 // Dividimos a lista de produtos em "chunks" (pedaços) exatos de 400 itens
-                const chunkSize = 499;
+                const chunkSize = 400;
                 for (let i = 0; i < itensParaSubir.length; i += chunkSize) {
                     const chunk = itensParaSubir.slice(i, i + chunkSize);
                     const batch = writeBatch(db);
@@ -1184,9 +1250,9 @@
                     await batch.commit();
                     
                     // Adicionado delay de 250ms para evitar que o telemóvel cancele a transação por sobrecarga
-                    await delay(80);
+                    await delay(250);
 
-                    // CORREÇÃO: Usar a variável do escopo correto 'itensParaSubir' para evitar o travamento
+                    // CORREÇÃO EFETUADA: Referenciando itensParaSubir.length diretamente, evitando o crash silencioso após 400 itens!
                     const progresso = Math.min(100, Math.round(((i + chunk.length) / itensParaSubir.length) * 100));
                     window.showToast(`A enviar catálogo... ${progresso}% concluído.`, "info");
                 }
