@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auditor Estoque V-40.0 - Local-Cloud Sinc</title>
+    <title>Auditor Estoque V-41.0 - Local-Cloud Sinc</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -357,7 +357,7 @@
     <!-- Modal de Contagem -->
     <div id="modal" class="modal">
         <div class="modal-content">
-            <div id="m-aviso-dup" style="display:none; background:#fef08a; color:#854d0e; padding:10px; border-radius:8px; margin-bottom:10px; text-align:center; font-weight:bold;">⚠️ JÁ CONTADO: <span id="m-qtd-anterior">0</span></div>
+            <div id="m-aviso-dup" style="display:none; background:#fef08a; color:#854d0e; padding:10px; border-radius:8px; margin-bottom:10px; text-align:center; font-size: 12px;"></div>
             <label style="font-size: 11px; font-weight: bold;">PRODUTO:</label>
             <input type="text" id="m-nome-edit" style="margin-bottom:10px; font-weight:bold;">
             <div class="m-info-box">
@@ -701,15 +701,34 @@
             document.getElementById('m-sist-val').innerText = `SISTEMA: ${item.sistema} ${item.unidade || 'UN'}`;
             document.getElementById('m-cmc-val').innerText = `CMC: R$ ${(item.cmc || 0).toFixed(2)}`;
             
-            if(indexEdicao === -1) {
-                document.getElementById('m-qtd').value = ''; document.getElementById('m-lote').value = '';
-                document.getElementById('m-validade').value = ''; 
+            // VERIFICAÇÃO CRÍTICA MÚLTIPLOS DISPOSITIVOS (BUSCA DIRETAMENTE NAS CONTABILIZAÇÕES DA NUVEM)
+            const idxAnt = contagens.findIndex(c => c.codigo === item.codigo && c.local === item.local);
+            const alertDup = document.getElementById('m-aviso-dup');
+            
+            if (idxAnt !== -1) {
+                const itemContado = contagens[idxAnt];
+                alertDup.style.display = 'block';
+                alertDup.style.background = '#fef08a';
+                alertDup.style.color = '#854d0e';
+                alertDup.style.padding = '10px';
+                alertDup.style.borderRadius = '8px';
+                alertDup.style.marginBottom = '10px';
+                alertDup.style.fontWeight = 'bold';
+                alertDup.style.textAlign = 'center';
+                alertDup.innerHTML = `⚠️ JÁ CONTADO POR <strong>${itemContado.operador || 'OUTRO OPERADOR'}</strong><br>Qtd Lançada: <strong>${itemContado.fisico} ${itemContado.unidade || 'UN'}</strong>`;
                 
-                const idxAnt = contagens.findIndex(c => c.codigo === item.codigo && c.local === item.local);
-                document.getElementById('m-aviso-dup').style.display = idxAnt !== -1 ? 'block' : 'none';
-                document.getElementById('m-qtd-anterior').innerText = idxAnt !== -1 ? contagens[idxAnt].fisico : '';
-                document.getElementById('btn-salvar-normal').style.display = idxAnt !== -1 ? 'none' : 'block';
-                document.getElementById('botoes-duplicado').style.display = idxAnt !== -1 ? 'flex' : 'none';
+                document.getElementById('btn-salvar-normal').style.display = 'none';
+                document.getElementById('botoes-duplicado').style.display = 'flex';
+            } else {
+                alertDup.style.display = 'none';
+                document.getElementById('btn-salvar-normal').style.display = 'block';
+                document.getElementById('botoes-duplicado').style.display = 'none';
+            }
+
+            if (indexEdicao === -1) {
+                document.getElementById('m-qtd').value = ''; 
+                document.getElementById('m-lote').value = '';
+                document.getElementById('m-validade').value = ''; 
                 document.getElementById('btn-excluir-item').style.display = 'none';
             } else { 
                 document.getElementById('btn-excluir-item').style.display = 'block'; 
