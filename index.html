@@ -85,6 +85,29 @@
         .btn-red { background: var(--red); color: white; }
         .btn-outline { background: transparent; border: 1.5px solid var(--blue); color: var(--blue); font-size: 11px; padding: 12px; }
         
+        /* Layout do MiniTeclado Virtual de atalhos matemáticos no modal */
+        .calc-shortcuts {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+            margin-top: 6px;
+            margin-bottom: 12px;
+        }
+        .btn-calc {
+            padding: 8px 4px;
+            font-size: 12px;
+            font-weight: 700;
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            text-transform: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .btn-calc:active {
+            background: var(--border);
+        }
+
         table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11px; margin-top: 15px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
         th { background: var(--bg); color: var(--gray); font-weight: 600; text-transform: uppercase; padding: 12px 8px; border-bottom: 1px solid var(--border); text-align: center; }
         td { padding: 12px 8px; text-align: center; border-bottom: 1px solid var(--border); color: var(--text); font-weight: 500; }
@@ -334,6 +357,9 @@
             <div style="margin-bottom: 15px;">
                 <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 5px; color: var(--blue-dark);">📂 CARREGAR EXCEL DA OMIE (LOCAL):</label>
                 <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="margin-top: 5px;">
+                
+                <!-- Novo Botão para Limpar Planilha Carregada / Cache Local -->
+                <button onclick="limparCacheLocal()" class="btn-red" style="margin-top: 12px; font-size:11px; padding: 10px; width: 100%;">🗑️ LIMPAR PLANILHA LOCAL (Zerar Cache)</button>
             </div>
             
             <div id="status-catalog" style="font-size: 11px; font-weight: bold; color: var(--orange); margin-bottom: 15px;">☁️ A carregar estado do catálogo...</div>
@@ -368,13 +394,25 @@
                     <p id="m-cmc-val" style="font-size:11px; color:var(--red); margin:0; font-weight:bold;"></p>
                 </div>
             </div>
-            <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <div style="display:flex; gap:10px; margin-bottom:4px;">
                 <div style="flex:1">
                     <label style="font-size:11px; font-weight:bold;">QTD FÍSICA (ACEITA CÁLCULOS):</label>
-                    <input type="text" id="m-qtd" inputmode="decimal" placeholder="Ex: 3*12+4" onblur="esteCalculo(this)" style="font-size:20px; font-weight:bold; border:2px solid var(--blue);">
+                    <!-- Mudamos o inputmode para "text" para que o teclado completo com letras e caracteres de símbolos possa ser aberto no celular -->
+                    <input type="text" id="m-qtd" placeholder="Ex: 3*12+4" onblur="esteCalculo(this)" style="font-size:20px; font-weight:bold; border:2px solid var(--blue);">
                 </div>
                 <div style="width:75px"><label style="font-size:11px; font-weight:bold;">UN:</label><input type="text" id="m-un-edit"></div>
             </div>
+            
+            <!-- MiniTeclado Virtual com atalhos de operações matemáticas para agilizar digitação no telemóvel -->
+            <div class="calc-shortcuts">
+                <button type="button" class="btn-calc" onclick="inserirSimbolo('+')">+</button>
+                <button type="button" class="btn-calc" onclick="inserirSimbolo('-')">-</button>
+                <button type="button" class="btn-calc" onclick="inserirSimbolo('*')">*</button>
+                <button type="button" class="btn-calc" onclick="inserirSimbolo('/')">/</button>
+                <button type="button" class="btn-calc" onclick="inserirSimbolo('(')">(</button>
+                <button type="button" class="btn-calc" onclick="inserirSimbolo(')')">)</button>
+            </div>
+
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                 <div><label style="font-size:11px;">Lote:</label><input type="text" id="m-lote"></div>
                 <div><label style="font-size:11px;">Validade:</label><input type="date" id="m-validade"></div>
@@ -433,6 +471,15 @@
         const removerAcentos = (str) => {
             if (!str) return '';
             return String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        };
+
+        // Função de inserção de caracteres rápidos de cálculo no input
+        window.inserirSimbolo = function(simbolo) {
+            const inputQtd = document.getElementById('m-qtd');
+            if (inputQtd) {
+                inputQtd.value += simbolo;
+                inputQtd.focus();
+            }
         };
 
         // Tenta carregar o último arquivo importado localmente neste telemóvel para não ter de importar sempre
@@ -506,6 +553,21 @@
                     statusEl.style.color = 'var(--orange)';
                 }
                 if (alertaEl && operadorAtual) alertaEl.style.display = 'block';
+                
+                document.getElementById('filtro-local-multi').innerHTML = `<small style="color:var(--gray); padding: 5px;">Importe o arquivo para ver locais...</small>`;
+                document.getElementById('filtro-family-multi').innerHTML = `<small style="color:var(--gray); padding: 5px;">Importe o arquivo para ver famílias...</small>`;
+            }
+        }
+
+        // LIMPAR CACHE/PLANILHA LOCAL DO DISPOSITIVO
+        window.limparCacheLocal = function() {
+            if (confirm("Deseja apagar a planilha local carregada neste dispositivo? As contagens salvas na nuvem continuam salvas.")) {
+                baseDados = [];
+                localStorage.removeItem('catalogo_local');
+                window.atualizarFiltrosDOM();
+                window.render();
+                window.showToast("Catálogo local removido com sucesso!", "success");
+                window.fecharModalConfig();
             }
         }
 
@@ -1125,7 +1187,6 @@
                                 const norm = cell.trim().toUpperCase();
                                 if(norm === "CÓDIGO DO PRODUTO" || norm === "CÓDIGO") idxCod = c; 
                                 else if(norm === "CÓDIGO EAN" || norm === "EAN" || norm === "GTIN") idxGtin = c;
-                                
                                 if(norm === "DESCRIÇÃO DO PRODUTO" || norm === "DESCRIÇÃO") idxDesc = c; 
                                 if(norm === "FAMÍLIA DE PRODUTO" || norm === "FAMÍLIA") idxFam = c;
                                 
@@ -1188,7 +1249,7 @@
                         }
                     } catch (e) { console.error("Falha ao salvar cache:", e); }
 
-                    window.showToast(`Sucesso! ${baseDados.length} produtos carregados localmente.`, "success");
+                    window.showToast("Sucesso! " + baseDados.length + " produtos carregados localmente.", "success");
                     window.atualizarFiltrosDOM();
                     window.render();
                     window.fecharModalConfig();
