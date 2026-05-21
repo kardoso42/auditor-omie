@@ -493,7 +493,12 @@
                 const colRefContagens = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
                 onSnapshot(colRefContagens, (snapshot) => {
                     const newContagens = [];
-                    snapshot.forEach(docSnap => { newContagens.push({ id: docSnap.id, ...docSnap.data() }); });
+                    snapshot.forEach(docSnap => { 
+                        newContagens.push({
+                            id: docSnap.id,
+                            ...docSnap.data()
+                        }); 
+                    });
                     contagens = newContagens.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
                     if (operadorAtual) window.render();
                 }, (error) => { console.error(error); });
@@ -517,11 +522,20 @@
                     novosProdutos.push(docSnap.data());
                 });
                 
-                // CORREÇÃO CRÍTICA (Nº 3): Atualiza a variável global baseDados em tempo de execução IMEDIATA para os operadores!
+                // Atualiza a variável global baseDados em tempo de execução IMEDIATA para os operadores!
                 baseDados = novosProdutos;
                 
-                // Grava no localStorage para persistência física do telemóvel
-                localStorage.setItem('catalogo_local', JSON.stringify(baseDados));
+                // Grava no localStorage de forma segura
+                try {
+                    const catalogoString = JSON.stringify(baseDados);
+                    if (catalogoString.length < 4000000) {
+                        localStorage.setItem('catalogo_local', catalogoString);
+                    } else {
+                        console.warn("Catálogo muito grande para localStorage");
+                    }
+                } catch (e) {
+                    console.error("Erro salvando cache:", e);
+                }
                 
                 // Atualiza filtros e renderização do DOM em tempo real
                 window.atualizarFiltrosDOM();
@@ -555,7 +569,7 @@
                 }
                 
                 document.getElementById('filtro-local-multi').innerHTML = Array.from(locs).sort().map((l, i) => `<div class="multi-select-item"><input type="checkbox" class="check-l" id="loc-${i}" value="${l}" checked><label for="loc-${i}">${l}</label></div>`).join('');
-                document.getElementById('filtro-familia-multi').innerHTML = Array.from(fams).sort().map((f, i) => `<div class="multi-select-item"><input type="checkbox" class="check-f" id="fam-${i}" value="${f}" checked><label for="fam-${i}">${f}</label></div>`).join('');
+                document.getElementById('filtro-family-multi').innerHTML = Array.from(fams).sort().map((f, i) => `<div class="multi-select-item"><input type="checkbox" class="check-f" id="fam-${i}" value="${f}" checked><label for="fam-${i}">${f}</label></div>`).join('');
                 
                 // Oculta banner de erro se já houver produtos carregados localmente
                 document.getElementById('alerta-catalogo-vazio').style.display = 'none';
@@ -707,7 +721,7 @@
                 window.showToast("A enviar para a Nuvem...", "info");
                 const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
                 
-                // Usar writeBatch para zerar em lotes rápidos de 250 em telemóvel
+                // Usar writeBatch para zerar em lotes rápidos
                 let batch = writeBatch(db);
                 let opCount = 0;
                 let totalZeradados = 0;
@@ -720,7 +734,7 @@
                     opCount++;
                     totalZeradados++;
 
-                    if (opCount >= 250) {
+                    if (opCount >= 100) {
                         await batch.commit();
                         batch = writeBatch(db);
                         opCount = 0;
@@ -777,7 +791,7 @@
             document.getElementById('modal').style.display = "flex"; setTimeout(() => document.getElementById('m-qtd').focus(), 300);
         }
 
-        // CORREÇÃO CRÍTICA (Nº 1): SALVAMENTO EM BACKGROUND PARA O MODAL FECHAR INSTANTANEAMENTE
+        // SALVAMENTO ROBUSTO SEM RISCO DE TRAVAR O MODAL
         window.salvarFinal = function(modo) {
             if (!currentUser) return window.showToast("A aguardar ligação à nuvem...", "error");
             window.esteCalculo(document.getElementById('m-qtd')); 
@@ -1005,7 +1019,7 @@
                 for(const c of contagens) { 
                     batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'contagens', c.id));
                     opCount++;
-                    if (opCount >= 250) {
+                    if (opCount >= 100) {
                         await batch.commit();
                         batch = writeBatch(db);
                         opCount = 0;
@@ -1018,7 +1032,7 @@
                     const docId = b.id || `${b.codigo}_${b.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
                     batch.delete(doc(colRefCatalog, docId));
                     opCount++;
-                    if (opCount >= 250) {
+                    if (opCount >= 100) {
                         await batch.commit();
                         batch = writeBatch(db);
                         opCount = 0;
@@ -1126,8 +1140,7 @@
                                 
                                 if(cell.includes("DESCRIÇÃO DO PRODUTO") || cell.includes("DESCRIÇÃO")) idxDesc = c; 
                                 if(cell.includes("FAMÍLIA DE PRODUTO") || cell.includes("FAMÍLIA")) idxFam = c;
-                                if(cell === "QUANTIDADE" || cell.includes("ESTOQUE") || cell.includes("SALDO")) idxSist = c; 
-                                if(cell.includes("DESCRIÇÃO DO LOCAL") || cell.includes("LOCAL DE ESTOQUE") || cell.includes("LOCAL")) idxLoc = c;
+                                if(cell === "QUANTIDADE") idxSist = c; if(cell.includes("DESCRIÇÃO DO LOCAL")) idxLoc = c;
                                 if(cell.includes("CMC UNITÁRIO") || cell.includes("CUSTO")) idxCmc = c; 
                                 if(cell.includes("UNIDADE") || cell.includes("UNID")) idxUn = c;
                             }); 
@@ -1214,81 +1227,132 @@
         // Função utilitária para aguardar um pequeno intervalo (previne bloqueio de execução móvel)
         const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-        // CORREÇÃO CRÍTICA (Nº 2): ENVIAR SELECIONADOS COM CONTROLO E CÁLCULO DE PROGRESSO EXATO
-        document.getElementById('btn-confirmar-subida').onclick = async function() {
-            if (cargoAtual !== 'CHEFE') return window.showToast("Operação não permitida!", "error");
-            if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
-            if (itensTemporariosExcel.length === 0) return window.showToast("Selecione uma planilha válida!", "warning");
-
+        // NOVO MOTOR DE SUBIDA EM LOTE BLINDADO CONTRA FALHAS E TIMEOUTS
+        document.getElementById('btn-confirmar-subida').onclick = async function () {
+            if (cargoAtual !== 'CHEFE') {
+                return window.showToast("Operação não permitida!", "error");
+            }
+        
+            if (!currentUser) {
+                return window.showToast("Sem ligação à nuvem.", "error");
+            }
+        
+            if (itensTemporariosExcel.length === 0) {
+                return window.showToast("Selecione uma planilha válida!", "warning");
+            }
+        
             const btnConfirmar = document.getElementById('btn-confirmar-subida');
+        
             btnConfirmar.disabled = true;
             btnConfirmar.innerText = "A PROCESSAR...";
-
-            // Obtém listas selecionadas das caixas de filtro pré-importação
-            const preLocsEscolhidos = Array.from(document.querySelectorAll('.pre-check-l:checked')).map(cb => cb.value);
-            const preFamsEscolhidas = Array.from(document.querySelectorAll('.pre-check-f:checked')).map(cb => cb.value);
-
-            if (preLocsEscolhidos.length === 0) { btnConfirmar.disabled = false; btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS"; return window.showToast("Selecione pelo menos um Local!", "warning"); }
-            if (preFamsEscolhidas.length === 0) { btnConfirmar.disabled = false; btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS"; return window.showToast("Selecione pelo menos uma Família!", "warning"); }
-
-            // Filtra os itens temporários conforme as seleções feitas
-            const itensParaSubir = itensTemporariosExcel.filter(item => 
-                preLocsEscolhidos.includes(item.local) && preFamsEscolhidas.includes(item.familia)
-            );
-
-            if (itensParaSubir.length === 0) {
-                btnConfirmar.disabled = false; btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS";
-                return window.showToast("Nenhum produto corresponde aos filtros!", "warning");
-            }
-
-            if (!confirm(`Confirmar o envio de ${itensParaSubir.length} produtos filtrados para a Nuvem?`)) {
-                btnConfirmar.disabled = false; btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS";
-                return;
-            }
-
-            window.showToast(`Preparados ${itensParaSubir.length} itens. A enviar...`, "info");
-            const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
-
+        
             try {
-                // Dividimos a lista de produtos em "chunks" (pedaços) menores (200) para máxima segurança móvel
-                const chunkSize = 200;
+                const preLocsEscolhidos = Array.from(document.querySelectorAll('.pre-check-l:checked')).map(cb => cb.value);
+                const preFamsEscolhidas = Array.from(document.querySelectorAll('.pre-check-f:checked')).map(cb => cb.value);
+        
+                if (preLocsEscolhidos.length === 0) {
+                    throw new Error("Selecione pelo menos um Local!");
+                }
+        
+                if (preFamsEscolhidas.length === 0) {
+                    throw new Error("Selecione pelo menos uma Família!");
+                }
+        
+                let itensParaSubir = itensTemporariosExcel.filter(item =>
+                    preLocsEscolhidos.includes(item.local) &&
+                    preFamsEscolhidas.includes(item.familia)
+                );
+        
+                if (itensParaSubir.length === 0) {
+                    throw new Error("Nenhum produto corresponde aos filtros!");
+                }
+        
+                // REMOVE ITENS INVÁLIDOS E PREVINE CRASH NO FIRESTORE
+                itensParaSubir = itensParaSubir.filter(item => {
+                    if (!item) return false;
+                    if (!item.codigo) return false;
+                    if (!item.descricao) return false;
+                    try {
+                        JSON.stringify(item);
+                        return true;
+                    } catch {
+                        return false;
+                    }
+                });
+        
+                if (!confirm(`Confirmar envio de ${itensParaSubir.length} produtos?`)) {
+                    btnConfirmar.disabled = false;
+                    btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS";
+                    return;
+                }
+        
+                window.showToast(`Preparados ${itensParaSubir.length} itens.`, "info");
+        
+                const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
+        
+                // CHUNK SIZE REDUZIDO PARA MAIOR ESTABILIDADE EM REDES MÓVEIS
+                const chunkSize = 100;
+                let enviados = 0;
+        
                 for (let i = 0; i < itensParaSubir.length; i += chunkSize) {
                     const chunk = itensParaSubir.slice(i, i + chunkSize);
-                    const batch = writeBatch(db);
-
-                    chunk.forEach(item => {
-                        batch.set(doc(colRefCatalog, item.id), item);
-                    });
-
-                    // Envia o lote de produtos de forma robusta e aguarda confirmação da rede
-                    await batch.commit();
-                    
-                    // Delay ampliado para evitar o corte de tráfego por parte das operadoras móveis
-                    await delay(300);
-
-                    // A VARIÁVEL itensParaSubir É USADA AQUI PARA IMPEDIR O CRASH E CONTINUAR A SUBIDA
-                    const progresso = Math.min(100, Math.round(((i + chunk.length) / itensParaSubir.length) * 100));
-                    window.showToast(`A enviar catálogo... ${progresso}% concluído.`, "info");
+                    let tentativa = 0;
+                    let sucesso = false;
+        
+                    while (!sucesso && tentativa < 3) {
+                        tentativa++;
+                        try {
+                            const batch = writeBatch(db);
+        
+                            chunk.forEach(item => {
+                                const codigoSeguro = String(item.codigo || '').replace(/[^a-zA-Z0-9]/g, '');
+                                const localSeguro = String(item.local || '').replace(/[^a-zA-Z0-9]/g, '');
+                                const docId = item.id || `${codigoSeguro}_${localSeguro}`;
+        
+                                batch.set(doc(colRefCatalog, docId), {
+                                    ...item,
+                                    updatedAt: Date.now()
+                                });
+                            });
+        
+                            console.log(`Enviando lote ${Math.floor(i / chunkSize) + 1}`);
+                            await batch.commit();
+        
+                            sucesso = true;
+                            enviados += chunk.length;
+        
+                            const progresso = Math.min(100, Math.round((enviados / itensParaSubir.length) * 100));
+                            window.showToast(`Upload ${progresso}% concluído`, "info");
+                            console.log(`Lote enviado com sucesso`);
+        
+                            // PAUSA CRÍTICA DE DESCANSO PARA A REDE (Evita bloqueio da Google e falhas silenciosas)
+                            await delay(500);
+                        } catch (erroLote) {
+                            console.error("Erro no lote:", erroLote);
+                            if (tentativa >= 3) {
+                                throw erroLote;
+                            }
+                            await delay(1500);
+                        }
+                    }
                 }
-
-                window.showToast(`Sucesso! ${itensParaSubir.length} itens salvos na nuvem.`, "success");
-                window.addLog(`Catálogo filtrado carregado na Nuvem (${itensParaSubir.length} itens)`);
-
-                // Limpa variáveis temporárias e reativa botões
+        
+                window.showToast(`${enviados} produtos enviados com sucesso!`, "success");
+                window.addLog(`Catálogo sincronizado (${enviados} itens)`);
+        
                 itensTemporariosExcel = [];
                 document.getElementById('pre-import-filters').style.display = 'none';
                 document.getElementById('file-input').value = '';
-                btnConfirmar.disabled = false; 
-                btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS";
-
-                // Força o sistema do chefe a ler o catálogo completo que acabou de subir
+        
                 await window.sincronizarCatalogoNuvem();
                 window.fecharModalConfig();
-
+        
             } catch (error) {
-                console.error("Erro ao subir lote:", error);
-                window.showToast("Erro ao sincronizar lote com a nuvem.", "error");
-                btnConfirmar.disabled = false; btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS";
+                console.error(error);
+                window.showToast(error.message || "Erro no upload.", "error");
+            } finally {
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS";
             }
         };
 
