@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auditor Estoque V-41.0 - Local-Cloud Sinc</title>
+    <title>Auditor Estoque V-43.0 - Local-Cloud Sinc</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -108,6 +108,20 @@
             background: var(--border);
         }
 
+        /* Estilização para o novo botão de gatilho do leitor */
+        #btn-gatilho {
+            font-size: 14px;
+            padding: 18px;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            font-weight: 700;
+            box-shadow: 0 4px 6px rgba(245, 158, 11, 0.25);
+            transition: background 0.2s, transform 0.1s;
+        }
+        #btn-gatilho:active {
+            transform: scale(0.97);
+        }
+
         table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 11px; margin-top: 15px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
         th { background: var(--bg); color: var(--gray); font-weight: 600; text-transform: uppercase; padding: 12px 8px; border-bottom: 1px solid var(--border); text-align: center; }
         td { padding: 12px 8px; text-align: center; border-bottom: 1px solid var(--border); color: var(--text); font-weight: 500; }
@@ -146,7 +160,7 @@
         
         .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
         .report-card { background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .report-card h5 { margin: 0 0 8px 0; color: var(--gray); font-size: 11px; text-transform: uppercase; }
+        .report-card h5 { margin: 0; color: var(--gray); font-size: 11px; text-transform: uppercase; }
         .report-card.red p { color: var(--red); }
         .report-card.green p { color: var(--green); }
         .report-card p { margin: 0; font-size: 18px; font-weight: 700; }
@@ -239,19 +253,34 @@
             <div class="card print-hide">
                 <button id="btn-cam" class="btn-blue" onclick="controlarCamera()">📷 LIGAR SCANNER</button>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                    <div class="switch-container" style="margin-top: 0;">
-                        <label for="modo-continuo">Modo Contínuo (+1 Auto)</label>
-                        <label class="switch"><input type="checkbox" id="modo-continuo"><span class="slider"></span></label>
+                <!-- O visor do scanner de camera permanece centralizado -->
+                <div id="reader" style="display:none; width:100%; margin-top:10px; border-radius: 12px; overflow: hidden; border: 2px solid var(--blue);"></div>
+                
+                <!-- CONTAINER DE CONTROLES DO SCANNER: Ajustado para aparecer exclusivamente abaixo do leitor -->
+                <div id="scanner-controls" style="display: none; flex-direction: column; gap: 8px; margin-top: 10px;">
+                    <!-- Botão de Disparo Manual / Gatilho -->
+                    <button id="btn-gatilho" type="button" class="btn-orange" onclick="dispararLeitorGatilho()">⚡ DISPARAR LEITOR (GATILHO)</button>
+                    
+                    <!-- Interruptores de modos de leitura -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div class="switch-container" style="margin-top: 0;">
+                            <label for="modo-continuo">Modo Contínuo (+1 Auto)</label>
+                            <label class="switch"><input type="checkbox" id="modo-continuo"><span class="slider"></span></label>
+                        </div>
+                        <div class="switch-container" style="margin-top: 0;">
+                            <label for="modo-cego">Modo Cego (Ocultar Sist)</label>
+                            <label class="switch"><input type="checkbox" id="modo-cego" onchange="render()"><span class="slider"></span></label>
+                        </div>
                     </div>
+                    
+                    <!-- Novo Interruptor para o modo Gatilho -->
                     <div class="switch-container" style="margin-top: 0;">
-                        <label for="modo-cego">Modo Cego (Ocultar Sist)</label>
-                        <label class="switch"><input type="checkbox" id="modo-cego" onchange="render()"><span class="slider"></span></label>
+                        <label for="modo-gatilho">Usar Gatilho (Prevenir Leitura Acidental)</label>
+                        <label class="switch"><input type="checkbox" id="modo-gatilho" onchange="toggleModoGatilho()"><span class="slider"></span></label>
                     </div>
                 </div>
 
-                <div id="reader" style="display:none; width:100%; margin-top:10px;"></div>
-                <input type="text" id="busca-input" style="margin-top:10px; border: 2px solid var(--blue-dark);" placeholder="PESQUISAR NOME OU GTIN...">
+                <input type="text" id="busca-input" style="margin-top:15px; border: 2px solid var(--blue-dark);" placeholder="PESQUISAR NOME OU GTIN...">
                 <div id="resultados" style="max-height: 250px; overflow-y: auto;"></div>
             </div>
 
@@ -467,6 +496,10 @@
         
         let currentUser = null;
 
+        // Estado do Gatilho Manual
+        window.gatilhoDisparado = false;
+        window.gatilhoTimeout = null;
+
         // Função de remoção automática de acentos para busca inteligente e sem falhas
         const removerAcentos = (str) => {
             if (!str) return '';
@@ -481,6 +514,42 @@
                 inputQtd.focus();
             }
         };
+
+        // Ativar/Desativar botão de disparo do gatilho dependendo da checkbox
+        window.toggleModoGatilho = function() {
+            const usarGatilho = document.getElementById('modo-gatilho').checked;
+            document.getElementById('btn-gatilho').style.display = usarGatilho ? "block" : "none";
+            window.resetarEstadoGatilho();
+        }
+
+        // Reseta o estado do gatilho
+        window.resetarEstadoGatilho = function() {
+            window.gatilhoDisparado = false;
+            if (window.gatilhoTimeout) clearTimeout(window.gatilhoTimeout);
+            const btnG = document.getElementById('btn-gatilho');
+            if (btnG) {
+                btnG.innerText = "⚡ DISPARAR LEITOR (GATILHO)";
+                btnG.style.background = "var(--orange)";
+            }
+        }
+
+        // Ativa o leitor temporariamente
+        window.dispararLeitorGatilho = function() {
+            window.gatilhoDisparado = true;
+            window.playBeep('success'); // bip sutil para indicar gatilho armado
+            const btnG = document.getElementById('btn-gatilho');
+            if (btnG) {
+                btnG.innerText = "🎯 AGUARDANDO CÓDIGO...";
+                btnG.style.background = "var(--green)";
+            }
+            
+            // Cancela após 4 segundos se nada for lido para prevenir leituras indesejadas mais tarde
+            if (window.gatilhoTimeout) clearTimeout(window.gatilhoTimeout);
+            window.gatilhoTimeout = setTimeout(() => {
+                window.resetarEstadoGatilho();
+                window.showToast("Gatilho expirado. Tente disparar novamente.", "warning");
+            }, 4000);
+        }
 
         // Tenta carregar o último arquivo importado localmente neste telemóvel para não ter de importar sempre
         try {
@@ -1051,22 +1120,45 @@
             if(audioCtx.state === 'suspended') audioCtx.resume();
             const btn = document.getElementById('btn-cam');
             if (btn.innerText.includes("LIGAR")) {
-                document.getElementById('reader').style.display = "block"; btn.innerText = "🛑 PARAR"; btn.className = "btn-red";
+                document.getElementById('reader').style.display = "block"; 
+                document.getElementById('scanner-controls').style.display = "flex"; // Mostra os switches abaixo da câmera
+                btn.innerText = "🛑 PARAR CÂMERA"; 
+                btn.className = "btn-red";
+                
+                window.toggleModoGatilho(); // Certifica o estado correto do gatilho ao iniciar
+
                 if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
                 try {
                     await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, async (txt) => {
+                        // Previne leitura duplicada rápida
                         if(window.lastScan === txt && Date.now() - window.lastScanTime < 2000) return;
-                        window.lastScan = txt; window.lastScanTime = Date.now();
-                        const cod = txt.trim().toUpperCase(); const itemBase = baseDados.find(i => i.codigo === cod || i.gtin === cod);
+                        
+                        // Validação do Modo Gatilho
+                        const usarGatilho = document.getElementById('modo-gatilho').checked;
+                        if (usarGatilho && !window.gatilhoDisparado) {
+                            return; // Ignora se o botão "⚡ DISPARAR LEITOR" não foi clicado!
+                        }
+
+                        // Se leu com sucesso no gatilho, reseta imediatamente o estado
+                        if (usarGatilho) {
+                            window.resetarEstadoGatilho();
+                        }
+
+                        window.lastScan = txt; 
+                        window.lastScanTime = Date.now();
+                        const cod = txt.trim().toUpperCase(); 
+                        const itemBase = baseDados.find(i => i.codigo === cod || i.gtin === cod);
                         const isContinuo = document.getElementById('modo-continuo').checked;
 
                         if (isContinuo) {
-                            window.playBeep('success'); let itemContado = contagens.find(c => c.codigo === cod || c.gtin === cod);
+                            window.playBeep('success'); 
+                            let itemContado = contagens.find(c => c.codigo === cod || c.gtin === cod);
                             const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
                             if (itemContado) {
                                 const payload = {...itemContado, fisico: itemContado.fisico + 1, dif: (itemContado.fisico + 1) - itemContado.sistema, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now(), operador: operadorAtual};
                                 await setDoc(doc(colRef, itemContado.id), payload);
-                                window.addLog(`+1 Auto: ${itemContado.descricao}`); window.showToast(`+1 ${itemContado.descricao}`, 'success');
+                                window.addLog(`+1 Auto: ${itemContado.descricao}`); 
+                                window.showToast(`+1 ${itemContado.descricao}`, 'success');
                             } else {
                                 let novoItem = itemBase || {codigo: cod, gtin: cod, descricao: "PRODUTO DESCONHECIDO", local: "SCAN", sistema: 0, cmc: 0, unidade: "UN"};
                                 const docId = `${novoItem.codigo}_${novoItem.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
@@ -1087,21 +1179,48 @@
                                     timestamp: Date.now()
                                 };
                                 await setDoc(doc(colRef, docId), payload);
-                                window.addLog(`Novo Auto: ${novoItem.descricao}`); window.showToast(`Adicionado: ${novoItem.descricao}`, 'success');
+                                window.addLog(`Novo Auto: ${novoItem.descricao}`); 
+                                window.showToast(`Adicionado: ${novoItem.descricao}`, 'success');
                             }
                         } else {
-                            window.playBeep('success'); window.desligarCam(); indexEdicao = -1; 
+                            window.playBeep('success'); 
+                            window.desligarCam(); 
+                            indexEdicao = -1; 
                             let itemModal = itemBase || {codigo: cod, gtin: cod, descricao: "NOVO PRODUTO", local: "SCAN", sistema: 0, cmc: 0, unidade: "UN"};
                             window.abrirModal(itemModal, itemModal.descricao === "NOVO PRODUTO");
                         }
                     });
-                } catch (err) { window.showToast("Falha na câmara.", "error"); window.desligarCam(); }
-            } else { window.desligarCam(); }
+                } catch (err) { 
+                    window.showToast("Falha na câmara.", "error"); 
+                    window.desligarCam(); 
+                }
+            } else { 
+                window.desligarCam(); 
+            }
         }
         
         window.desligarCam = function() { 
-            const resetUI = () => { document.getElementById('reader').style.display = "none"; document.getElementById('btn-cam').innerText = "📷 LIGAR SCANNER"; document.getElementById('btn-cam').className = "btn-blue"; };
-            if (html5QrCode) { try { const stopPromise = html5QrCode.stop(); if (stopPromise) { stopPromise.then(() => resetUI()).catch(() => resetUI()); } else { resetUI(); } } catch (err) { resetUI(); } } else { resetUI(); }
+            const resetUI = () => { 
+                document.getElementById('reader').style.display = "none"; 
+                document.getElementById('scanner-controls').style.display = "none"; // Oculta switches se desligado
+                document.getElementById('btn-cam').innerText = "📷 LIGAR SCANNER"; 
+                document.getElementById('btn-cam').className = "btn-blue"; 
+                window.resetarEstadoGatilho();
+            };
+            if (html5QrCode) { 
+                try { 
+                    const stopPromise = html5QrCode.stop(); 
+                    if (stopPromise) { 
+                        stopPromise.then(() => resetUI()).catch(() => resetUI()); 
+                    } else { 
+                        resetUI(); 
+                    } 
+                } catch (err) { 
+                    resetUI(); 
+                } 
+            } else { 
+                resetUI(); 
+            }
         }
 
         // OUTROS EVENTOS DOM - BUSCA EM TEMPO REAL ULTRA RÁPIDA (DIGITA E JÁ FILTRA!)
