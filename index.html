@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auditor Estoque V-37.0 - Cloud Sinc</title>
+    <title>Auditor Estoque V-38.0 - Master Sinc</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -76,7 +76,9 @@
             cursor: pointer; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;
             transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px;
         }
-        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button:active:not(:disabled) { transform: scale(0.98); }
+        
         .btn-blue { background: var(--blue); color: white; box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2); }
         .btn-green { background: var(--green); color: white; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); }
         .btn-orange { background: var(--orange); color: white; }
@@ -371,7 +373,7 @@
                 <button class="btn-outline" style="border-color: var(--orange); color: var(--orange);" onclick="verPendentes()">🔍 PENDENTES</button>
                 <button class="btn-outline" style="border-color: var(--red); color: var(--red);" onclick="zerarNaoContados()">⚠️ ZERAR RESTANTES</button>
             </div>
-            <!-- Botão Fechar Menu reestilizado com cor azul destacada e sombra suave para máxima usabilidade -->
+            <!-- Botão Fechar Menu -->
             <button onclick="fecharModalConfig()" style="background: var(--blue); color: white; margin-top: 20px; border: none; width: 100%; border-radius: 10px; padding: 14px; font-weight: 700; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); transition: background 0.2s;">Fechar Menu</button>
         </div>
     </div>
@@ -406,12 +408,12 @@
             <div style="margin-top:10px;"><label style="font-size:11px;">OBSERVAÇÕES:</label><input type="text" id="m-obs"></div>
             
             <div style="margin-top:20px;">
-                <button id="btn-salvar-normal" class="btn-green" onclick="salvarFinal('substituir')">☁️ GUARDAR NA NUVEM</button>
-                <div id="botoes-duplicado" style="display:none; gap:10px;"><button class="btn-blue" onclick="salvarFinal('somar')">➕ SOMAR</button><button class="btn-orange" onclick="salvarFinal('substituir')">🔄 TROCAR</button></div>
+                <button id="btn-salvar-normal" type="button" class="btn-green" onclick="salvarFinal('substituir')">☁️ GUARDAR NA NUVEM</button>
+                <div id="botoes-duplicado" style="display:none; gap:10px;"><button type="button" class="btn-blue" onclick="salvarFinal('somar')">➕ SOMAR</button><button type="button" class="btn-orange" onclick="salvarFinal('substituir')">🔄 TROCAR</button></div>
                 <!-- Excluir contagem individual apenas para Chefes -->
-                <button id="btn-excluir-item" class="btn-red" style="display:none; margin-top:10px;" onclick="excluirContagemEspecifica()">🗑️ APAGAR CONTAGEM</button>
+                <button id="btn-excluir-item" type="button" class="btn-red" style="display:none; margin-top:10px;" onclick="excluirContagemEspecifica()">🗑️ APAGAR CONTAGEM</button>
             </div>
-            <button onclick="fecharModal()" style="background:none; color:var(--gray); margin-top:5px; border:none; width:100%;">CANCELAR</button>
+            <button onclick="fecharModal()" type="button" style="background:none; color:var(--gray); margin-top:5px; border:none; width:100%;">CANCELAR</button>
         </div>
     </div>
 
@@ -515,7 +517,7 @@
                     novosProdutos.push(docSnap.data());
                 });
                 
-                // CORREÇÃO CRÍTICA: Atualiza a variável global baseDados em tempo de execução para os operadores!
+                // CORREÇÃO CRÍTICA (Nº 3): Atualiza a variável global baseDados em tempo de execução IMEDIATA para os operadores!
                 baseDados = novosProdutos;
                 
                 // Grava no localStorage para persistência física do telemóvel
@@ -705,7 +707,7 @@
                 window.showToast("A enviar para a Nuvem...", "info");
                 const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
                 
-                // Usar writeBatch para zerar em lotes rápidos de 400 em telemóvel
+                // Usar writeBatch para zerar em lotes rápidos de 250 em telemóvel
                 let batch = writeBatch(db);
                 let opCount = 0;
                 let totalZeradados = 0;
@@ -718,7 +720,7 @@
                     opCount++;
                     totalZeradados++;
 
-                    if (opCount >= 400) {
+                    if (opCount >= 250) {
                         await batch.commit();
                         batch = writeBatch(db);
                         opCount = 0;
@@ -775,8 +777,8 @@
             document.getElementById('modal').style.display = "flex"; setTimeout(() => document.getElementById('m-qtd').focus(), 300);
         }
 
-        // SALVAMENTO ROBUSTO SEM RISCO DE TRAVAR O MODAL
-        window.salvarFinal = async function(modo) {
+        // CORREÇÃO CRÍTICA (Nº 1): SALVAMENTO EM BACKGROUND PARA O MODAL FECHAR INSTANTANEAMENTE
+        window.salvarFinal = function(modo) {
             if (!currentUser) return window.showToast("A aguardar ligação à nuvem...", "error");
             window.esteCalculo(document.getElementById('m-qtd')); 
             const qVal = document.getElementById('m-qtd').value; 
@@ -797,9 +799,11 @@
                 if(modo === 'somar') novaQtd += contagens[idxAnt].fisico; 
             }
 
-            const codRaw = itemAtual.codigo || 'MAN_' + Date.now();
-            const locRaw = itemAtual.local || 'MANUAL';
-            const docId = targetId || itemAtual.id || `${codRaw}_${locRaw}`.replace(/[^a-zA-Z0-9_-]/g, '');
+            const codRaw = itemAtual.codigo ? String(itemAtual.codigo).replace(/[^a-zA-Z0-9]/g, '') : '';
+            const locRaw = itemAtual.local ? String(itemAtual.local).replace(/[^a-zA-Z0-9]/g, '') : '';
+            const uniqueFallback = `${codRaw}_${locRaw}_${Date.now()}`;
+            const docId = targetId || itemAtual.id || uniqueFallback;
+            
             const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
 
             const payload = {
@@ -815,33 +819,23 @@
                 timestamp: Date.now()
             };
             
-            // Etapa 1: Salva o documento no Firestore de forma direta
-            try {
-                await setDoc(doc(colRef, docId), payload);
-            } catch (e) {
-                console.error("Falha ao salvar no Firestore:", e);
-                window.showToast("Falha na Nuvem", "error");
-                return; // Interrompe o fluxo para que o utilizador não perca o dado no modal
-            }
+            // Etapa 1: Fecha a interface imediatamente para não travar o ecrã do Operador
+            window.fecharModal(); 
+            const buscaInput = document.getElementById('busca-input');
+            if (buscaInput) buscaInput.value = '';
+            const resultados = document.getElementById('resultados');
+            if (resultados) resultados.innerHTML = '';
+            
+            window.showToast("A guardar...", "info");
 
-            // Etapa 2: Se salvou com sucesso, executa as atualizações de ecrã sob forte segurança
-            try {
-                // Fechar o modal imediatamente antes de qualquer outra tarefa visual secundária
-                window.fecharModal(); 
+            // Etapa 2: Executa a gravação em rede de forma assíncrona (Background)
+            setDoc(doc(colRef, docId), payload).then(() => {
                 window.showToast("Nuvem Sincronizada", "success"); 
-                
-                // Grava o feed em tempo real de forma independente
                 window.addLog(`${modo === 'somar' ? '+' : ''} ${novaQtd}x ${itemAtual.descricao}`);
-                
-                // Limpa de forma segura o campo de pesquisa sem risco de crash no telemóvel (eliminada instrução .focus() bloqueadora)
-                const buscaInput = document.getElementById('busca-input');
-                if (buscaInput) buscaInput.value = '';
-                
-                const resultados = document.getElementById('resultados');
-                if (resultados) resultados.innerHTML = '';
-            } catch (uiError) {
-                console.error("Erro pós-salvamento de interface:", uiError);
-            }
+            }).catch((e) => {
+                console.error("Falha ao salvar no Firestore:", e);
+                window.showToast("Falha na Nuvem! Verifique a sua rede.", "error");
+            });
         }
 
         // MOTOR DE RENDERIZAÇÃO BLINDADO A 100% CONTRA VALORES INEXISTENTES OU NaN
@@ -893,7 +887,7 @@
             if (aba === 'relatorios') window.atualizarRelatorios();
         }
 
-        // MOTOR DE RELATÓRIOS TOTALMENTE PROTEGIDO CONTRA ERROS DE TIPO (PREVINE TRAVAMENTO EM MÓVEL)
+        // MOTOR DE RELATÓRIOS TOTALMENTE PROTEGIDO CONTRA ERROS DE TIPO
         window.atualizarRelatorios = function() {
             const totalBase = baseDados.length > 0 ? baseDados.length : contagens.length;
             const totalContados = contagens.length;
@@ -1011,7 +1005,7 @@
                 for(const c of contagens) { 
                     batch.delete(doc(db, 'artifacts', appId, 'public', 'data', 'contagens', c.id));
                     opCount++;
-                    if (opCount >= 400) {
+                    if (opCount >= 250) {
                         await batch.commit();
                         batch = writeBatch(db);
                         opCount = 0;
@@ -1022,9 +1016,9 @@
                 const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
                 for(const b of baseDados) {
                     const docId = b.id || `${b.codigo}_${b.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
-                    batch.delete(doc(colRefCatalog, docId)); // CORRIGIDO: Referência correta colRefCatalog
+                    batch.delete(doc(colRefCatalog, docId));
                     opCount++;
-                    if (opCount >= 400) {
+                    if (opCount >= 250) {
                         await batch.commit();
                         batch = writeBatch(db);
                         opCount = 0;
@@ -1035,7 +1029,7 @@
                     await batch.commit();
                 }
                 
-                // Limpa localmente também
+                // Limpa localmente também e força sincronização em todos os operadores
                 baseDados = [];
                 localStorage.removeItem('catalogo_local');
                 window.atualizarFiltrosDOM();
@@ -1105,7 +1099,7 @@
             }
         };
 
-        // CHEFE SELECIONA PLANILHA: PROCESSA LOCAIS E FAMÍLIAS SEM SUBIR AINDA
+        // CHEFE SELECIONA PLANILHA: PROCESSA LOCAIS E FAMÍLIAS SEM SUBIR AINDA (ADAPTADO PARA OMIE)
         document.getElementById('file-input').onchange = function(e) {
             if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o Chefe de Setor pode importar dados!", "error");
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
@@ -1122,13 +1116,22 @@
                     
                     for(let r=0; r<rows.length; r++) {
                         if(!rows[r]) continue; let line = rows[r].map(c => String(c || "").toUpperCase().trim());
-                        if(line.includes("CÓDIGO DO PRODUTO") || line.includes("DESCRIÇÃO DO PRODUTO")) {
-                            hRow = r; line.forEach((cell, c) => {
-                                if(cell.includes("CÓDIGO DO PRODUTO")) idxCod = c; else if(cell.includes("CÓDIGO EAN")) idxGtin = c;
-                                if(cell.includes("DESCRIÇÃO DO PRODUTO")) idxDesc = c; if(cell.includes("FAMÍLIA DE PRODUTO")) idxFam = c;
-                                if(cell === "QUANTIDADE") idxSist = c; if(cell.includes("DESCRIÇÃO DO LOCAL")) idxLoc = c;
-                                if(cell.includes("CMC UNITÁRIO")) idxCmc = c; if(cell.includes("UNIDADE")) idxUn = c;
-                            }); break; 
+                        
+                        // Reconhecimento Dinâmico de Cabeçalhos Padrão Omie
+                        if(line.includes("CÓDIGO DO PRODUTO") || line.includes("DESCRIÇÃO DO PRODUTO") || line.includes("CÓDIGO EAN")) {
+                            hRow = r; 
+                            line.forEach((cell, c) => {
+                                if(cell.includes("CÓDIGO DO PRODUTO")) idxCod = c; 
+                                else if(cell.includes("CÓDIGO EAN") || cell.includes("EAN") || cell.includes("GTIN")) idxGtin = c;
+                                
+                                if(cell.includes("DESCRIÇÃO DO PRODUTO") || cell.includes("DESCRIÇÃO")) idxDesc = c; 
+                                if(cell.includes("FAMÍLIA DE PRODUTO") || cell.includes("FAMÍLIA")) idxFam = c;
+                                if(cell === "QUANTIDADE" || cell.includes("ESTOQUE") || cell.includes("SALDO")) idxSist = c; 
+                                if(cell.includes("DESCRIÇÃO DO LOCAL") || cell.includes("LOCAL DE ESTOQUE") || cell.includes("LOCAL")) idxLoc = c;
+                                if(cell.includes("CMC UNITÁRIO") || cell.includes("CUSTO")) idxCmc = c; 
+                                if(cell.includes("UNIDADE") || cell.includes("UNID")) idxUn = c;
+                            }); 
+                            break; 
                         }
                     }
                     
@@ -1154,7 +1157,10 @@
                             preFamilias.add(f);
 
                             const codRaw = idxCod !== -1 ? String(row[idxCod] || '').trim().toUpperCase() : '';
-                            const idUnico = `${codRaw}_${l}_L${localCounter}`.replace(/[^a-zA-Z0-9_-]/g, '');
+                            const idUnico = `${codRaw.replace(/[^a-zA-Z0-9]/g, '')}_${l.replace(/[^a-zA-Z0-9]/g, '')}_L${localCounter}`;
+                            
+                            const sistemaVal = parseFloat(String(row[idxSist] || '0').replace(',','.'));
+                            const cmcVal = parseFloat(String(row[idxCmc] || '0').replace(',','.'));
 
                             itensTemporariosExcel.push({ 
                                 id: idUnico,
@@ -1163,9 +1169,9 @@
                                 gtin: idxGtin !== -1 ? String(row[idxGtin] || '').trim() : '', 
                                 familia: f, 
                                 local: l, 
-                                sistema: parseFloat(String(row[idxSist]).replace(',','.')) || 0, 
-                                cmc: parseFloat(String(row[idxCmc]).replace(',','.')) || 0, 
-                                unidade: String(row[idxUn] || 'UN').trim().toUpperCase() 
+                                sistema: isNaN(sistemaVal) ? 0 : sistemaVal, 
+                                cmc: isNaN(cmcVal) ? 0 : cmcVal, 
+                                unidade: idxUn !== -1 ? String(row[idxUn] || 'UN').trim().toUpperCase() : 'UN'
                             });
                         }
                     }
@@ -1208,18 +1214,22 @@
         // Função utilitária para aguardar um pequeno intervalo (previne bloqueio de execução móvel)
         const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-        // ENVIAR SELECIONADOS: Executado após o chefe clicar no botão "ENVIAR SELECIONADOS"
+        // CORREÇÃO CRÍTICA (Nº 2): ENVIAR SELECIONADOS COM CONTROLO E CÁLCULO DE PROGRESSO EXATO
         document.getElementById('btn-confirmar-subida').onclick = async function() {
             if (cargoAtual !== 'CHEFE') return window.showToast("Operação não permitida!", "error");
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
             if (itensTemporariosExcel.length === 0) return window.showToast("Selecione uma planilha válida!", "warning");
 
+            const btnConfirmar = document.getElementById('btn-confirmar-subida');
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerText = "A PROCESSAR...";
+
             // Obtém listas selecionadas das caixas de filtro pré-importação
             const preLocsEscolhidos = Array.from(document.querySelectorAll('.pre-check-l:checked')).map(cb => cb.value);
             const preFamsEscolhidas = Array.from(document.querySelectorAll('.pre-check-f:checked')).map(cb => cb.value);
 
-            if (preLocsEscolhidos.length === 0) return window.showToast("Selecione pelo menos um Local!", "warning");
-            if (preFamsEscolhidas.length === 0) return window.showToast("Selecione pelo menos uma Família!", "warning");
+            if (preLocsEscolhidos.length === 0) { btnConfirmar.disabled = false; btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS"; return window.showToast("Selecione pelo menos um Local!", "warning"); }
+            if (preFamsEscolhidas.length === 0) { btnConfirmar.disabled = false; btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS"; return window.showToast("Selecione pelo menos uma Família!", "warning"); }
 
             // Filtra os itens temporários conforme as seleções feitas
             const itensParaSubir = itensTemporariosExcel.filter(item => 
@@ -1227,17 +1237,21 @@
             );
 
             if (itensParaSubir.length === 0) {
-                return window.showToast("Nenhum produto corresponde aos filtros escolhidos!", "warning");
+                btnConfirmar.disabled = false; btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS";
+                return window.showToast("Nenhum produto corresponde aos filtros!", "warning");
             }
 
-            if (!confirm(`Confirmar o envio de ${itensParaSubir.length} produtos filtrados para a Nuvem?`)) return;
+            if (!confirm(`Confirmar o envio de ${itensParaSubir.length} produtos filtrados para a Nuvem?`)) {
+                btnConfirmar.disabled = false; btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS";
+                return;
+            }
 
             window.showToast(`Preparados ${itensParaSubir.length} itens. A enviar...`, "info");
             const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
 
             try {
-                // Dividimos a lista de produtos em "chunks" (pedaços) exatos de 400 itens
-                const chunkSize = 400;
+                // Dividimos a lista de produtos em "chunks" (pedaços) menores (200) para máxima segurança móvel
+                const chunkSize = 200;
                 for (let i = 0; i < itensParaSubir.length; i += chunkSize) {
                     const chunk = itensParaSubir.slice(i, i + chunkSize);
                     const batch = writeBatch(db);
@@ -1246,13 +1260,13 @@
                         batch.set(doc(colRefCatalog, item.id), item);
                     });
 
-                    // Envia o lote de 400 produtos de forma robusta e aguarda confirmação da rede
+                    // Envia o lote de produtos de forma robusta e aguarda confirmação da rede
                     await batch.commit();
                     
-                    // Adicionado delay de 250ms para evitar que o telemóvel cancele a transação por sobrecarga
-                    await delay(250);
+                    // Delay ampliado para evitar o corte de tráfego por parte das operadoras móveis
+                    await delay(300);
 
-                    // CORREÇÃO EFETUADA: Referenciando itensParaSubir.length diretamente, evitando o crash silencioso após 400 itens!
+                    // A VARIÁVEL itensParaSubir É USADA AQUI PARA IMPEDIR O CRASH E CONTINUAR A SUBIDA
                     const progresso = Math.min(100, Math.round(((i + chunk.length) / itensParaSubir.length) * 100));
                     window.showToast(`A enviar catálogo... ${progresso}% concluído.`, "info");
                 }
@@ -1260,18 +1274,21 @@
                 window.showToast(`Sucesso! ${itensParaSubir.length} itens salvos na nuvem.`, "success");
                 window.addLog(`Catálogo filtrado carregado na Nuvem (${itensParaSubir.length} itens)`);
 
-                // Limpa variáveis temporárias de interface
+                // Limpa variáveis temporárias e reativa botões
                 itensTemporariosExcel = [];
                 document.getElementById('pre-import-filters').style.display = 'none';
                 document.getElementById('file-input').value = '';
+                btnConfirmar.disabled = false; 
+                btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS";
 
-                // Sincroniza o catálogo local de imediato de forma nativa e força a leitura
+                // Força o sistema do chefe a ler o catálogo completo que acabou de subir
                 await window.sincronizarCatalogoNuvem();
                 window.fecharModalConfig();
 
             } catch (error) {
                 console.error("Erro ao subir lote:", error);
                 window.showToast("Erro ao sincronizar lote com a nuvem.", "error");
+                btnConfirmar.disabled = false; btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS";
             }
         };
 
