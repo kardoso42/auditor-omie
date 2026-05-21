@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auditor Estoque V-38.0 - Master Sinc</title>
+    <title>Auditor Estoque V-39.0 - Master Sinc Pro</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -1140,7 +1140,8 @@
                                 
                                 if(cell.includes("DESCRIÇÃO DO PRODUTO") || cell.includes("DESCRIÇÃO")) idxDesc = c; 
                                 if(cell.includes("FAMÍLIA DE PRODUTO") || cell.includes("FAMÍLIA")) idxFam = c;
-                                if(cell === "QUANTIDADE") idxSist = c; if(cell.includes("DESCRIÇÃO DO LOCAL")) idxLoc = c;
+                                if(cell === "QUANTIDADE" || cell.includes("ESTOQUE") || cell.includes("SALDO")) idxSist = c; 
+                                if(cell.includes("DESCRIÇÃO DO LOCAL") || cell.includes("LOCAL DE ESTOQUE") || cell.includes("LOCAL")) idxLoc = c;
                                 if(cell.includes("CMC UNITÁRIO") || cell.includes("CUSTO")) idxCmc = c; 
                                 if(cell.includes("UNIDADE") || cell.includes("UNID")) idxUn = c;
                             }); 
@@ -1227,7 +1228,7 @@
         // Função utilitária para aguardar um pequeno intervalo (previne bloqueio de execução móvel)
         const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-        // NOVO MOTOR DE SUBIDA EM LOTE BLINDADO CONTRA FALHAS E TIMEOUTS
+        // NOVO MOTOR DE SUBIDA EM LOTE BLINDADO CONTRA FALHAS E TIMEOUTS (VERSÃO PRO)
         document.getElementById('btn-confirmar-subida').onclick = async function () {
             if (cargoAtual !== 'CHEFE') {
                 return window.showToast("Operação não permitida!", "error");
