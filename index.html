@@ -170,16 +170,7 @@
             <h2 style="color: var(--blue-dark); margin-top: 0; font-size: 24px;">Auditor Estoque</h2>
             <p style="color: var(--gray); font-size: 13px; margin-bottom: 20px;">Auditoria de Inventário com Ficheiro Local</p>
             
-            <input type="text" id="login-nome" placeholder="Seu Nome ou Matrícula" style="margin-bottom: 12px; text-align: center; font-weight: bold;">
-            
-            <select id="login-cargo" onchange="togglePinInput()" style="margin-bottom: 12px; text-align: center; font-weight: bold;">
-                <option value="OPERADOR">👤 OPERADOR (APENAS CONTAGEM)</option>
-                <option value="CHEFE">🔑 CHEFE DO SETOR (ADMINISTRADOR)</option>
-            </select>
-
-            <div id="pin-area" style="display: none; margin-bottom: 12px;">
-                <input type="password" id="login-pin" inputmode="numeric" pattern="[0-9]*" placeholder="PIN de Acesso do Chefe" style="text-align: center; font-weight: bold; border: 1.5px solid var(--orange);">
-            </div>
+            <input type="text" id="login-nome" placeholder="Seu Nome ou Matrícula" style="margin-bottom: 15px; text-align: center; font-weight: bold;">
 
             <button class="btn-blue" onclick="fazerLogin()">Entrar no Sistema</button>
         </div>
@@ -339,13 +330,13 @@
                 <label class="switch"><input type="checkbox" id="modal-theme-toggle" onchange="toggleDarkMode()"><span class="slider"></span></label>
             </div>
 
-            <!-- Importação de Planilha Local (Agora disponível para TODA a equipa) -->
+            <!-- Importação de Planilha Local -->
             <div style="margin-bottom: 15px;">
                 <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 5px; color: var(--blue-dark);">📂 CARREGAR EXCEL DA OMIE (LOCAL):</label>
                 <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="margin-top: 5px;">
             </div>
             
-            <div id="status-catalog" style="font-size: 11px; font-weight: bold; color: var(--orange); margin-bottom: 15px;">☁️ A aguardar carregamento do arquivo local...</div>
+            <div id="status-catalog" style="font-size: 11px; font-weight: bold; color: var(--orange); margin-bottom: 15px;">☁️ A carregar estado do catálogo...</div>
 
             <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📍 LOCAIS (FILTRAR):</label>
             <div id="filtro-local-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Importe o arquivo para ver locais...</small></div>
@@ -353,8 +344,8 @@
             <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📂 FAMÍLIAS (FILTRAR):</label>
             <div id="filtro-family-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Importe o arquivo para ver famílias...</small></div>
             
-            <!-- Botões Administrativos: Apenas para Chefe -->
-            <div id="chefe-buttons-area" class="grid-buttons" style="display:none;">
+            <!-- Botões Administrativos -->
+            <div id="chefe-buttons-area" class="grid-buttons">
                 <button class="btn-outline" style="border-color: var(--orange); color: var(--orange);" onclick="verPendentes()">🔍 PENDENTES</button>
                 <button class="btn-outline" style="border-color: var(--red); color: var(--red);" onclick="zerarNaoContados()">⚠️ ZERAR RESTANTES</button>
             </div>
@@ -395,7 +386,7 @@
             <div style="margin-top:20px;">
                 <button id="btn-salvar-normal" type="button" class="btn-green" onclick="salvarFinal('substituir')">☁️ GUARDAR NA NUVEM</button>
                 <div id="botoes-duplicado" style="display:none; gap:10px;"><button type="button" class="btn-blue" onclick="salvarFinal('somar')">➕ SOMAR</button><button type="button" class="btn-orange" onclick="salvarFinal('substituir')">🔄 TROCAR</button></div>
-                <!-- Excluir contagem individual apenas para Chefes -->
+                <!-- Excluir contagem individual disponibilizado para todos -->
                 <button id="btn-excluir-item" type="button" class="btn-red" style="display:none; margin-top:10px;" onclick="excluirContagemEspecifica()">🗑️ APAGAR CONTAGEM</button>
             </div>
             <button onclick="fecharModal()" type="button" style="background:none; color:var(--gray); margin-top:5px; border:none; width:100%;">CANCELAR</button>
@@ -434,9 +425,15 @@
         let itemAtual = null; let indexEdicao = -1; let html5QrCode = null; let diasParaVencer = null;
         
         let operadorAtual = localStorage.getItem('operador_atual') || '';
-        let cargoAtual = localStorage.getItem('cargo_atual') || 'OPERADOR';
+        let cargoAtual = localStorage.getItem('cargo_atual') || 'CHEFE'; // Por padrão todos têm privilégios administrativos
         
         let currentUser = null;
+
+        // Função de remoção automática de acentos para busca inteligente e sem falhas
+        const removerAcentos = (str) => {
+            if (!str) return '';
+            return String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        };
 
         // Tenta carregar o último arquivo importado localmente neste telemóvel para não ter de importar sempre
         try {
@@ -445,12 +442,6 @@
                 baseDados = JSON.parse(cachedCatalog);
             }
         } catch (e) { console.error("Erro ao ler cache do catálogo:", e); }
-
-        // MOSTRAR/OCULTAR INPUT DO PIN NO LOGIN
-        window.togglePinInput = function() {
-            const cargo = document.getElementById('login-cargo').value;
-            document.getElementById('pin-area').style.display = cargo === 'CHEFE' ? 'block' : 'none';
-        }
 
         // INICIA AUTENTICAÇÃO INVISÍVEL
         const initAuth = async () => {
@@ -470,7 +461,7 @@
         onAuthStateChanged(auth, (u) => {
             currentUser = u;
             if (currentUser) {
-                // 1. Escuta as Contagens salvas na nuvem em Tempo Real (Apenas as contagens sobem à nuvem!)
+                // 1. Escuta as Contagens salvas na nuvem em Tempo Real
                 const colRefContagens = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
                 onSnapshot(colRefContagens, (snapshot) => {
                     const newContagens = [];
@@ -523,38 +514,28 @@
             if (operadorAtual) {
                 document.getElementById('view-login').style.display = 'none';
                 document.getElementById('view-app').style.display = 'block';
-                document.getElementById('lbl-operador').innerText = `${operadorAtual} (${cargoAtual})`;
+                document.getElementById('lbl-operador').innerText = `${operadorAtual}`;
                 
-                const isChefe = cargoAtual === 'CHEFE';
-                document.getElementById('chefe-export-area').style.display = isChefe ? 'flex' : 'none';
-                document.getElementById('chefe-limpar-btn').style.display = isChefe ? 'block' : 'none';
-                document.getElementById('chefe-buttons-area').style.display = isChefe ? 'grid' : 'none';
-                document.getElementById('chefe-pdf-btn').style.display = isChefe ? 'block' : 'none';
+                document.getElementById('chefe-export-area').style.display = 'flex';
+                document.getElementById('chefe-limpar-btn').style.display = 'block';
+                document.getElementById('chefe-buttons-area').style.display = 'grid';
+                document.getElementById('chefe-pdf-btn').style.display = 'block';
 
                 window.atualizarFiltrosDOM();
                 window.render();
             } else {
                 document.getElementById('view-login').style.display = 'flex';
                 document.getElementById('view-app').style.display = 'none';
-                window.togglePinInput();
             }
         }
         
         window.fazerLogin = function() {
             const nome = document.getElementById('login-nome').value.trim().toUpperCase();
-            const cargo = document.getElementById('login-cargo').value;
             
             if (!nome) return window.showToast('Digite o seu nome ou matrícula!', 'warning');
             
-            if (cargo === 'CHEFE') {
-                const pin = document.getElementById('login-pin').value;
-                if (pin !== "1234") {
-                    return window.showToast('PIN do Chefe incorreto!', 'error');
-                }
-            }
-            
             operadorAtual = nome;
-            cargoAtual = cargo;
+            cargoAtual = 'CHEFE'; 
             localStorage.setItem('operador_atual', operadorAtual);
             localStorage.setItem('cargo_atual', cargoAtual);
             
@@ -565,11 +546,10 @@
         window.fazerLogout = function() {
             if(confirm("Deseja sair da sessão atual?")) {
                 operadorAtual = '';
-                cargoAtual = 'OPERADOR';
+                cargoAtual = 'CHEFE';
                 localStorage.removeItem('operador_atual');
                 localStorage.removeItem('cargo_atual');
                 document.getElementById('login-nome').value = '';
-                document.getElementById('login-pin').value = '';
                 window.checkLogin();
             }
         }
@@ -642,7 +622,6 @@
         }
 
         window.zerarNaoContados = async function() {
-            if (cargoAtual !== 'CHEFE') return window.showToast("Permissão apenas para o Chefe de Setor!", "error");
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
             if(baseDados.length === 0) return window.showToast("Carregue o arquivo local do Omie primeiro!", "error");
             const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
@@ -703,7 +682,6 @@
 
         window.excluirContagemEspecifica = async function() { 
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
-            if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o chefe do setor pode apagar contagens completas!", "error");
             if(indexEdicao !== -1 && confirm("APAGAR esta contagem da nuvem?")) { 
                 const item = contagens[indexEdicao];
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'contagens', item.id));
@@ -734,7 +712,7 @@
                 document.getElementById('botoes-duplicado').style.display = idxAnt !== -1 ? 'flex' : 'none';
                 document.getElementById('btn-excluir-item').style.display = 'none';
             } else { 
-                document.getElementById('btn-excluir-item').style.display = cargoAtual === 'CHEFE' ? 'block' : 'none'; 
+                document.getElementById('btn-excluir-item').style.display = 'block'; 
             }
             document.getElementById('modal').style.display = "flex"; setTimeout(() => document.getElementById('m-qtd').focus(), 300);
         }
@@ -838,7 +816,7 @@
                     </tr>`;
                 }
             });
-            if (contagens.length > 100) html += `<tr><td colspan="5" style="color:var(--gray); padding:15px;">Mostrando as últimas 100...</td></tr>`;
+            if (contagens.length > 100) html += `<tr><td colspan="5" style="color:var(--gray); padding:15px;">Mostrando os últimas 100...</td></tr>`;
             
             b.innerHTML = html; 
             document.getElementById('dash-skus').innerText = contagens.length; 
@@ -1045,7 +1023,67 @@
             if (html5QrCode) { try { const stopPromise = html5QrCode.stop(); if (stopPromise) { stopPromise.then(() => resetUI()).catch(() => resetUI()); } else { resetUI(); } } catch (err) { resetUI(); } } else { resetUI(); }
         }
 
-        // LEITURA DO EXCEL LOCAL (Simples, Ultra Rápido, Não Envia Nada do Catálogo Para A Nuvem)
+        // OUTROS EVENTOS DOM - BUSCA EM TEMPO REAL ULTRA RÁPIDA (DIGITA E JÁ FILTRA!)
+        document.getElementById('busca-input').oninput = function() {
+            const rawT = this.value;
+            const t = removerAcentos(rawT.toUpperCase().trim()); 
+            const res = document.getElementById('resultados'); 
+            res.innerHTML = '';
+            
+            if (t.length < 1) return;
+            
+            // Filtros normalizados sem acentuação para busca resiliente
+            const lS = window.getLocsSel().map(v => removerAcentos(v.toUpperCase())); 
+            const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => removerAcentos(cb.value.toUpperCase()));
+            
+            const fil = baseDados.filter(i => {
+                const desc = removerAcentos(String(i.descricao || '').toUpperCase());
+                const cod = removerAcentos(String(i.codigo || '').toUpperCase());
+                const gtin = removerAcentos(String(i.gtin || '').toUpperCase());
+                
+                const matchesSearch = desc.includes(t) || cod.includes(t) || gtin.includes(t);
+                
+                const itemLocal = removerAcentos(String(i.local || '').toUpperCase());
+                const itemFam = removerAcentos(String(i.familia || '').toUpperCase());
+                
+                // Aplica filtros se as caixas estiverem preenchidas
+                const matchesLocal = lS.length === 0 || lS.includes(itemLocal);
+                const matchesFamily = fS.length === 0 || fS.includes(itemFam);
+                
+                return matchesSearch && matchesLocal && matchesFamily;
+            });
+            
+            if (fil.length > 0) {
+                fil.slice(0, 15).forEach(i => {
+                    const d = document.createElement('div'); 
+                    d.className = 'item-res'; 
+                    d.innerHTML = `<strong>${i.descricao}</strong><br><small style="color:var(--gray)">${i.local} | SIST: ${i.sistema}</small>`;
+                    d.onclick = () => { indexEdicao = -1; window.abrirModal(i, false); }; 
+                    res.appendChild(d);
+                });
+            } else {
+                const btnNovo = document.createElement('button'); 
+                btnNovo.className = 'btn-blue'; 
+                btnNovo.style.marginTop = '10px'; 
+                btnNovo.innerHTML = `➕ NOVO PRODUTO: "${rawT}"`;
+                btnNovo.onclick = () => { 
+                    indexEdicao = -1; 
+                    window.abrirModal({
+                        codigo: 'MAN_' + Date.now(), 
+                        gtin: rawT, 
+                        descricao: rawT.toUpperCase(), 
+                        local: lS.length > 0 ? lS[0] : 'MANUAL', 
+                        familia: 'SEM FAMÍLIA', 
+                        sistema: 0, 
+                        cmc: 0, 
+                        unidade: 'UN'
+                    }, true); 
+                }; 
+                res.appendChild(btnNovo);
+            }
+        };
+
+        // LEITURA DO EXCEL LOCAL - ALTO RENDIMENTO COM MAPEAMENTO EXATO DE COLUNAS DO OMIE
         document.getElementById('file-input').onchange = function(e) {
             if (!e.target.files || e.target.files.length === 0) return;
             
@@ -1058,19 +1096,26 @@
                     let idxCod=-1, idxDesc=-1, idxFam=-1, idxSist=-1, idxLoc=-1, idxCmc=-1, idxUn=-1, idxGtin=-1, hRow=-1;
                     
                     for(let r=0; r<rows.length; r++) {
-                        if(!rows[r]) continue; let line = rows[r].map(c => String(c || "").toUpperCase().trim());
+                        if(!rows[r]) continue; 
+                        let line = rows[r].map(c => String(c || "").trim().toUpperCase());
                         
-                        if(line.includes("CÓDIGO DO PRODUTO") || line.includes("DESCRIÇÃO DO PRODUTO") || line.includes("CÓDIGO EAN")) {
+                        // Detecção exata de termos sem falsos positivos cruzados por .includes() soltos
+                        if(line.includes("CÓDIGO DO PRODUTO") || line.includes("DESCRIÇÃO DO PRODUTO") || line.includes("LOCAL DE ESTOQUE")) {
                             hRow = r; 
                             line.forEach((cell, c) => {
-                                if(cell.includes("CÓDIGO DO PRODUTO")) idxCod = c; 
-                                else if(cell.includes("CÓDIGO EAN") || cell.includes("EAN") || cell.includes("GTIN")) idxGtin = c;
-                                if(cell.includes("DESCRIÇÃO DO PRODUTO") || cell.includes("DESCRIÇÃO")) idxDesc = c; 
-                                if(cell.includes("FAMÍLIA DE PRODUTO") || cell.includes("FAMÍLIA")) idxFam = c;
-                                if(cell === "QUANTIDADE" || cell.includes("ESTOQUE") || cell.includes("SALDO")) idxSist = c; 
-                                if(cell.includes("DESCRIÇÃO DO LOCAL") || cell.includes("LOCAL DE ESTOQUE") || cell.includes("LOCAL")) idxLoc = c;
-                                if(cell.includes("CMC UNITÁRIO") || cell.includes("CUSTO")) idxCmc = c; 
-                                if(cell.includes("UNIDADE") || cell.includes("UNID")) idxUn = c;
+                                const norm = cell.trim().toUpperCase();
+                                if(norm === "CÓDIGO DO PRODUTO" || norm === "CÓDIGO") idxCod = c; 
+                                else if(norm === "CÓDIGO EAN" || norm === "EAN" || norm === "GTIN") idxGtin = c;
+                                
+                                if(norm === "DESCRIÇÃO DO PRODUTO" || norm === "DESCRIÇÃO") idxDesc = c; 
+                                if(norm === "FAMÍLIA DE PRODUTO" || norm === "FAMÍLIA") idxFam = c;
+                                
+                                // Mapeamento preciso de Quantidade para não colidir com Local de Estoque
+                                if(norm === "QUANTIDADE" || norm === "QUANT" || norm === "SALDO") idxSist = c; 
+                                if(norm === "LOCAL DE ESTOQUE" || norm === "DESCRIÇÃO DO LOCAL" || norm === "LOCAL") idxLoc = c;
+                                
+                                if(norm === "CMC UNITÁRIO" || norm === "CUSTO UNITÁRIO" || norm === "CUSTO") idxCmc = c; 
+                                if(norm === "UNIDADE" || norm === "UNID" || norm === "UN") idxUn = c;
                             }); 
                             break; 
                         }
@@ -1092,8 +1137,9 @@
                             const f = idxFam !== -1 ? String(row[idxFam] || 'SEM FAMÍLIA').trim().toUpperCase() : 'SEM FAMÍLIA';
                             const codRaw = idxCod !== -1 ? String(row[idxCod] || '').trim().toUpperCase() : '';
                             
-                            const sistemaVal = parseFloat(String(row[idxSist] || '0').replace(',','.'));
-                            const cmcVal = parseFloat(String(row[idxCmc] || '0').replace(',','.'));
+                            // Conversão segura de dados numéricos limpando notações monetárias
+                            const sistemaVal = idxSist !== -1 ? parseFloat(String(row[idxSist] || '0').replace(',','.')) : 0;
+                            const cmcVal = idxCmc !== -1 ? parseFloat(String(row[idxCmc] || '0').replace(',','.')) : 0;
 
                             temporarios.push({ 
                                 codigo: codRaw, 
@@ -1115,7 +1161,7 @@
 
                     baseDados = temporarios;
                     
-                    // Salva na cache local do dispositivo para não ter de importar de cada vez que abre
+                    // Salva de forma persistente no telemóvel do operador
                     try {
                         const catalogoString = JSON.stringify(baseDados);
                         if (catalogoString.length < 4800000) {
