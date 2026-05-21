@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auditor Estoque V-39.0 - Master Sinc Pro</title>
+    <title>Auditor Estoque V-40.0 - Local-Cloud Sinc</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -168,7 +168,7 @@
     <div id="view-login">
         <div class="login-card">
             <h2 style="color: var(--blue-dark); margin-top: 0; font-size: 24px;">Auditor Estoque</h2>
-            <p style="color: var(--gray); font-size: 13px; margin-bottom: 20px;">Sincronização Cloud Ativada. Identifique-se para registar as auditorias.</p>
+            <p style="color: var(--gray); font-size: 13px; margin-bottom: 20px;">Auditoria de Inventário com Ficheiro Local</p>
             
             <input type="text" id="login-nome" placeholder="Seu Nome ou Matrícula" style="margin-bottom: 12px; text-align: center; font-weight: bold;">
             
@@ -188,8 +188,8 @@
     <!-- APLICAÇÃO PRINCIPAL -->
     <div id="view-app" style="display:none;">
         <div class="app-header">
-            <h2>Auditor Estoque <span class="cloud-badge">☁️ CLOUD</span></h2>
-            <p>Gestão de Inventário Sincronizada</p>
+            <h2>Auditor Estoque <span class="cloud-badge" style="background: var(--blue);">📄 LOCAL FILE</span></h2>
+            <p>Contagens Sincronizadas na Nuvem</p>
             <div class="print-hide">
                 <span class="user-badge">👤 <span id="lbl-operador">Operador</span> <button onclick="fazerLogout()" style="background:none; border:none; color:rgba(255,255,255,0.7); padding:0; margin-left:8px; cursor:pointer; font-size:10px; font-weight:bold;">SAIR</button></span>
             </div>
@@ -215,11 +215,11 @@
                 </div>
             </div>
 
-            <!-- Alerta Amigável para Operadores sem Catálogo local -->
-            <div id="alerta-catalogo-vazio" class="card print-hide" style="display:none; background: rgba(245, 158, 11, 0.1); border: 2px dashed var(--orange); text-align: center; padding: 20px; border-radius: 16px; margin-bottom: 15px;">
-                <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; color: var(--orange);">⚠️ O seu catálogo local está vazio!</p>
-                <p style="margin: 0 0 15px; font-size: 11px; color: var(--gray);">O Chefe de Setor já importou o Excel da Omie na nuvem? Clique abaixo para sincronizar o catálogo no seu telemóvel.</p>
-                <button class="btn-blue" onclick="sincronizarCatalogoNuvem()" style="max-width: 280px; margin: 0 auto; font-size: 11px; padding: 12px;">🔄 SINCRONIZAR PRODUTOS DA NUVEM</button>
+            <!-- Alerta Amigável para Operadores carregar catálogo via Excel local -->
+            <div id="alerta-catalogo-vazio" class="card print-hide" style="display:block; background: rgba(245, 158, 11, 0.1); border: 2px dashed var(--orange); text-align: center; padding: 20px; border-radius: 16px; margin-bottom: 15px;">
+                <p style="margin: 0 0 12px; font-size: 13px; font-weight: bold; color: var(--orange);">⚠️ Sem catálogo importado neste dispositivo!</p>
+                <p style="margin: 0 0 15px; font-size: 11px; color: var(--gray);">Para iniciar, clique no botão abaixo ou abra as opções para selecionar o arquivo Excel da Omie.</p>
+                <button class="btn-blue" onclick="abrirModalConfig()" style="max-width: 280px; margin: 0 auto; font-size: 11px; padding: 12px;">📁 SELECIONAR ARQUIVO EXCEL</button>
             </div>
 
             <div class="card print-hide">
@@ -332,48 +332,33 @@
     <!-- Modal de Menu/Importação -->
     <div id="modal-config" class="modal">
         <div class="modal-content">
-            <h3 style="margin-top: 0; font-size: 16px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;">☰ Menu Principal</h3>
+            <h3 style="margin-top: 0; font-size: 16px; color: var(--blue-dark); border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 15px;">☰ Opções e Ficheiro</h3>
             
             <div class="switch-container" style="margin-top: 0; margin-bottom: 15px;">
                 <label for="modal-theme-toggle">Modo Escuro (Dark Mode)</label>
                 <label class="switch"><input type="checkbox" id="modal-theme-toggle" onchange="toggleDarkMode()"><span class="slider"></span></label>
             </div>
 
-            <!-- Botão Sincronizar Catálogo da Nuvem: Altamente visível e disponível para todos -->
-            <button class="btn-green" onclick="sincronizarCatalogoNuvem()" style="margin-bottom: 15px; background: var(--blue);">🔄 SINCRONIZAR CATÁLOGO DA NUVEM</button>
-
-            <!-- Seção de Upload: Visível apenas ao Chefe do Setor -->
-            <div id="chefe-upload-area" style="display:none; margin-bottom: 15px;">
-                <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 5px;">1. SELECIONAR PLANILHA OMIE:</label>
+            <!-- Importação de Planilha Local (Agora disponível para TODA a equipa) -->
+            <div style="margin-bottom: 15px;">
+                <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 5px; color: var(--blue-dark);">📂 CARREGAR EXCEL DA OMIE (LOCAL):</label>
                 <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="margin-top: 5px;">
-                
-                <!-- Nova Área de Seleção de Filtros Pré-Importação (Inicialmente oculta) -->
-                <div id="pre-import-filters" style="display:none; margin-top: 15px; border: 2px solid var(--orange); border-radius: 12px; padding: 12px; background: rgba(245, 158, 11, 0.05);">
-                    <p style="margin: 0 0 8px 0; font-size: 11px; font-weight: bold; color: var(--orange);">🎯 SELEÇÃO PARA IMPORTAR:</p>
-                    
-                    <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📍 LOCAIS ENCONTRADOS:</label>
-                    <div id="pre-locais-box" class="multi-select-box" style="margin-bottom: 10px; max-height: 100px;"></div>
-                    
-                    <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📂 FAMÍLIAS ENCONTRADAS:</label>
-                    <div id="pre-familias-box" class="multi-select-box" style="margin-bottom: 15px; max-height: 100px;"></div>
-                    
-                    <button class="btn-green" id="btn-confirmar-subida" style="font-size:11px; padding:12px;">🚀 ENVIAR SELECIONADOS</button>
-                </div>
             </div>
             
-            <div id="status-catalog" style="font-size: 11px; font-weight: bold; color: var(--orange); margin-bottom: 15px;">☁️ A carregar estado do catálogo...</div>
+            <div id="status-catalog" style="font-size: 11px; font-weight: bold; color: var(--orange); margin-bottom: 15px;">☁️ A aguardar carregamento do arquivo local...</div>
 
             <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📍 LOCAIS (FILTRAR):</label>
-            <div id="filtro-local-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Sincronize o catálogo para ver locais...</small></div>
+            <div id="filtro-local-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Importe o arquivo para ver locais...</small></div>
+            
             <label style="font-size: 10px; font-weight: bold; color: var(--gray);">📂 FAMÍLIAS (FILTRAR):</label>
-            <div id="filtro-family-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Sincronize o catálogo para ver famílias...</small></div>
+            <div id="filtro-family-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Importe o arquivo para ver famílias...</small></div>
             
             <!-- Botões Administrativos: Apenas para Chefe -->
             <div id="chefe-buttons-area" class="grid-buttons" style="display:none;">
                 <button class="btn-outline" style="border-color: var(--orange); color: var(--orange);" onclick="verPendentes()">🔍 PENDENTES</button>
                 <button class="btn-outline" style="border-color: var(--red); color: var(--red);" onclick="zerarNaoContados()">⚠️ ZERAR RESTANTES</button>
             </div>
-            <!-- Botão Fechar Menu -->
+            
             <button onclick="fecharModalConfig()" style="background: var(--blue); color: white; margin-top: 20px; border: none; width: 100%; border-radius: 10px; padding: 14px; font-weight: 700; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); transition: background 0.2s;">Fechar Menu</button>
         </div>
     </div>
@@ -443,27 +428,23 @@
         const db = getFirestore(app);
 
         // VARIÁVEIS GLOBAIS DA APLICAÇÃO
-        let baseDados = [];
-        let contagens = [];
+        let baseDados = []; // Armazena a planilha lida localmente no telemóvel do utilizador
+        let contagens = [];  // Escuta em tempo real as contagens salvas na nuvem
         let logAcoes = [];
         let itemAtual = null; let indexEdicao = -1; let html5QrCode = null; let diasParaVencer = null;
         
         let operadorAtual = localStorage.getItem('operador_atual') || '';
-        let cargoAtual = localStorage.getItem('cargo_atual') || 'OPERADOR'; // Define se é OPERADOR ou CHEFE
+        let cargoAtual = localStorage.getItem('cargo_atual') || 'OPERADOR';
         
         let currentUser = null;
-        const ADMIN_PIN = "1234"; // PIN de acesso padrão do Chefe
 
-        // Lista temporária que armazena os produtos da planilha antes de confirmar a subida
-        let itensTemporariosExcel = [];
-
-        // Carregar catálogo salvo no telemóvel na inicialização do app
+        // Tenta carregar o último arquivo importado localmente neste telemóvel para não ter de importar sempre
         try {
             const cachedCatalog = localStorage.getItem('catalogo_local');
             if (cachedCatalog) {
                 baseDados = JSON.parse(cachedCatalog);
             }
-        } catch (e) { console.error("Erro ao ler catálogo em cache:", e); }
+        } catch (e) { console.error("Erro ao ler cache do catálogo:", e); }
 
         // MOSTRAR/OCULTAR INPUT DO PIN NO LOGIN
         window.togglePinInput = function() {
@@ -489,7 +470,7 @@
         onAuthStateChanged(auth, (u) => {
             currentUser = u;
             if (currentUser) {
-                // 1. Escuta as Contagens em Tempo Real (Essencial para sincronizar os furos de stock)
+                // 1. Escuta as Contagens salvas na nuvem em Tempo Real (Apenas as contagens sobem à nuvem!)
                 const colRefContagens = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
                 onSnapshot(colRefContagens, (snapshot) => {
                     const newContagens = [];
@@ -501,58 +482,13 @@
                     });
                     contagens = newContagens.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
                     if (operadorAtual) window.render();
-                }, (error) => { console.error(error); });
+                }, (error) => { console.error("Erro ao escutar contagens:", error); });
                 
-                // Atualiza filtros com o catálogo que já temos guardado localmente
                 window.atualizarFiltrosDOM();
             }
         });
 
-        // FUNÇÃO DE SINC DO CATÁLOGO: Descarrega tudo da Nuvem para a memória de execução de forma direta e limpa!
-        window.sincronizarCatalogoNuvem = async function() {
-            if (!currentUser) return window.showToast("A aguardar ligação com a nuvem...", "error");
-            window.showToast("A sincronizar base de dados...", "info");
-            
-            try {
-                const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
-                const querySnapshot = await getDocs(colRefCatalog);
-                
-                const novosProdutos = [];
-                querySnapshot.forEach((docSnap) => {
-                    novosProdutos.push(docSnap.data());
-                });
-                
-                // Atualiza a variável global baseDados em tempo de execução IMEDIATA para os operadores!
-                baseDados = novosProdutos;
-                
-                // Grava no localStorage de forma segura
-                try {
-                    const catalogoString = JSON.stringify(baseDados);
-                    if (catalogoString.length < 4000000) {
-                        localStorage.setItem('catalogo_local', catalogoString);
-                    } else {
-                        console.warn("Catálogo muito grande para localStorage");
-                    }
-                } catch (e) {
-                    console.error("Erro salvando cache:", e);
-                }
-                
-                // Atualiza filtros e renderização do DOM em tempo real
-                window.atualizarFiltrosDOM();
-                if (operadorAtual) window.render();
-                
-                window.showToast(`Sincronizado! ${baseDados.length} produtos carregados.`, "success");
-                window.addLog(`Sincronizou catálogo (${baseDados.length} itens)`);
-                
-                // Oculta aviso de catálogo vazio no ecrã de auditoria
-                document.getElementById('alerta-catalogo-vazio').style.display = 'none';
-            } catch (error) {
-                console.error("Erro ao sincronizar catálogo:", error);
-                window.showToast("Falha ao descarregar o catálogo da nuvem.", "error");
-            }
-        }
-
-        // Atualizar filtros locais no DOM (Otimizado para ler dinamicamente)
+        // Sincronizar filtros na tela com os dados locais
         window.atualizarFiltrosDOM = function() {
             let locs = new Set();
             let fams = new Set();
@@ -562,43 +498,38 @@
             });
             
             const statusEl = document.getElementById('status-catalog');
+            const alertaEl = document.getElementById('alerta-catalogo-vazio');
+            
             if (baseDados.length > 0) {
                 if (statusEl) {
-                    statusEl.innerText = `☁️ Catálogo Sincronizado: ${baseDados.length} itens.`;
+                    statusEl.innerText = `📂 Planilha Local: ${baseDados.length} itens carregados.`;
                     statusEl.style.color = 'var(--green)';
                 }
+                if (alertaEl) alertaEl.style.display = 'none';
                 
                 document.getElementById('filtro-local-multi').innerHTML = Array.from(locs).sort().map((l, i) => `<div class="multi-select-item"><input type="checkbox" class="check-l" id="loc-${i}" value="${l}" checked><label for="loc-${i}">${l}</label></div>`).join('');
                 document.getElementById('filtro-family-multi').innerHTML = Array.from(fams).sort().map((f, i) => `<div class="multi-select-item"><input type="checkbox" class="check-f" id="fam-${i}" value="${f}" checked><label for="fam-${i}">${f}</label></div>`).join('');
-                
-                // Oculta banner de erro se já houver produtos carregados localmente
-                document.getElementById('alerta-catalogo-vazio').style.display = 'none';
             } else {
                 if (statusEl) {
-                    statusEl.innerText = "☁️ Catálogo Vazio localmente. Sincronize!";
+                    statusEl.innerText = "☁️ Sem planilha carregada localmente neste aparelho.";
                     statusEl.style.color = 'var(--orange)';
                 }
-                
-                if (operadorAtual) {
-                    document.getElementById('alerta-catalogo-vazio').style.display = 'block';
-                }
+                if (alertaEl && operadorAtual) alertaEl.style.display = 'block';
             }
         }
 
-        // FUNÇÕES TORNADAS GLOBAIS PARA O HTML
+        // LOGIN E CONTEXTO DE CARGO
         window.checkLogin = function() {
             if (operadorAtual) {
                 document.getElementById('view-login').style.display = 'none';
                 document.getElementById('view-app').style.display = 'block';
                 document.getElementById('lbl-operador').innerText = `${operadorAtual} (${cargoAtual})`;
                 
-                // Aplicar restrições com base no Cargo (Chefe vs Operador)
                 const isChefe = cargoAtual === 'CHEFE';
                 document.getElementById('chefe-export-area').style.display = isChefe ? 'flex' : 'none';
                 document.getElementById('chefe-limpar-btn').style.display = isChefe ? 'block' : 'none';
                 document.getElementById('chefe-buttons-area').style.display = isChefe ? 'grid' : 'none';
                 document.getElementById('chefe-pdf-btn').style.display = isChefe ? 'block' : 'none';
-                document.getElementById('chefe-upload-area').style.display = isChefe ? 'block' : 'none';
 
                 window.atualizarFiltrosDOM();
                 window.render();
@@ -613,11 +544,11 @@
             const nome = document.getElementById('login-nome').value.trim().toUpperCase();
             const cargo = document.getElementById('login-cargo').value;
             
-            if (!nome) return window.showToast('Digite a sua matrícula ou nome!', 'warning');
+            if (!nome) return window.showToast('Digite o seu nome ou matrícula!', 'warning');
             
             if (cargo === 'CHEFE') {
                 const pin = document.getElementById('login-pin').value;
-                if (pin !== ADMIN_PIN) {
+                if (pin !== "1234") {
                     return window.showToast('PIN do Chefe incorreto!', 'error');
                 }
             }
@@ -628,7 +559,7 @@
             localStorage.setItem('cargo_atual', cargoAtual);
             
             window.checkLogin(); 
-            window.showToast(`Conectado como ${operadorAtual} (${cargoAtual})`, 'success');
+            window.showToast(`Identificado como ${operadorAtual}`, 'success');
         }
         
         window.fazerLogout = function() {
@@ -661,7 +592,9 @@
             logAcoes.unshift({time, msg, type, op});
             if(logAcoes.length > 5) logAcoes.pop();
             const container = document.getElementById('log-container');
-            container.innerHTML = logAcoes.map(l => `<div class="log-entry"><span class="log-time">${l.time}</span><span class="log-msg"><span class="log-operador">${l.op}:</span> ${l.msg}</span></div>`).join('');
+            if(container) {
+                container.innerHTML = logAcoes.map(l => `<div class="log-entry"><span class="log-time">${l.time}</span><span class="log-msg"><span class="log-operador">${l.op}:</span> ${l.msg}</span></div>`).join('');
+            }
         }
 
         window.esteCalculo = function(el) {
@@ -695,8 +628,7 @@
         window.getLocsSel = function() { return Array.from(document.querySelectorAll('.check-l:checked')).map(cb => cb.value); }
 
         window.verPendentes = function() {
-            if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o chefe pode ver pendentes!", "error");
-            if(baseDados.length === 0) return window.showToast("Sincronize o catálogo primeiro!", "error");
+            if(baseDados.length === 0) return window.showToast("Importe primeiro o seu arquivo do Omie local!", "error");
             const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
             const pendentes = baseDados.filter(i => !contagens.some(c => c.codigo === i.codigo && c.local === i.local) && (lS.length === 0 || lS.includes(i.local)) && (fS.length === 0 || fS.includes(i.familia)));
             const res = document.getElementById('resultados'); 
@@ -710,25 +642,43 @@
         }
 
         window.zerarNaoContados = async function() {
-            if (cargoAtual !== 'CHEFE') return window.showToast("Permissão negada!", "error");
+            if (cargoAtual !== 'CHEFE') return window.showToast("Permissão apenas para o Chefe de Setor!", "error");
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
-            if(baseDados.length === 0) return window.showToast("Sincronize o catálogo primeiro!", "error");
+            if(baseDados.length === 0) return window.showToast("Carregue o arquivo local do Omie primeiro!", "error");
             const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
             const pendentes = baseDados.filter(i => !contagens.some(c => c.codigo === i.codigo && c.local === i.local) && (lS.length === 0 || lS.includes(i.local)) && (fS.length === 0 || fS.includes(i.familia)));
-            if(pendentes.length === 0) return window.showToast("Nenhum pendente!", "info");
+            if(pendentes.length === 0) return window.showToast("Nenhum produto pendente!", "info");
             
-            if(confirm(`ZERAR o stock de ${pendentes.length} itens na NUVEM?`)) {
-                window.showToast("A enviar para a Nuvem...", "info");
+            if(confirm(`Zerar no sistema as contagens de ${pendentes.length} produtos pendentes?`)) {
+                window.showToast("A registar contagens zero na nuvem...", "info");
                 const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
                 
-                // Usar writeBatch para zerar em lotes rápidos
                 let batch = writeBatch(db);
                 let opCount = 0;
                 let totalZeradados = 0;
 
                 for (const i of pendentes) {
-                    const docId = i.id || `${i.codigo}_${i.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
-                    const payload = {...i, fisico: 0, dif: 0 - i.sistema, cmc_unitario: i.cmc || 0, lote: "", validade: "", obs: "NÃO ENCONTRADO", operador: operadorAtual, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now()};
+                    const cleanCod = String(i.codigo || '').replace(/[^a-zA-Z0-9]/g, '');
+                    const cleanLoc = String(i.local || '').replace(/[^a-zA-Z0-9]/g, '');
+                    const docId = `${cleanCod}_${cleanLoc}`;
+                    const payload = {
+                        codigo: i.codigo,
+                        descricao: i.descricao,
+                        local: i.local,
+                        sistema: i.sistema,
+                        unidade: i.unidade,
+                        familia: i.familia,
+                        cmc: i.cmc,
+                        fisico: 0, 
+                        dif: 0 - i.sistema, 
+                        cmc_unitario: i.cmc || 0, 
+                        lote: "", 
+                        validade: "", 
+                        obs: "NÃO ENCONTRADO", 
+                        operador: operadorAtual, 
+                        data: new Date().toLocaleString('pt-PT'), 
+                        timestamp: Date.now()
+                    };
                     
                     batch.set(doc(colRef, docId), payload);
                     opCount++;
@@ -745,17 +695,19 @@
                     await batch.commit();
                 }
 
-                window.addLog(`Zerou ${totalZeradados} itens.`); window.showToast("Itens zerados!", "success"); window.fecharModalConfig();
+                window.addLog(`Zerou ${totalZeradados} itens.`); 
+                window.showToast("Inventário restante zerado!", "success"); 
+                window.fecharModalConfig();
             }
         }
 
         window.excluirContagemEspecifica = async function() { 
-            if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o Chefe de Setor pode apagar contagens!", "error");
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
-            if(indexEdicao !== -1 && confirm("APAGAR esta contagem da Nuvem?")) { 
+            if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o chefe do setor pode apagar contagens completas!", "error");
+            if(indexEdicao !== -1 && confirm("APAGAR esta contagem da nuvem?")) { 
                 const item = contagens[indexEdicao];
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'contagens', item.id));
-                window.addLog(`Apagado: ${item.descricao}`, 'error');
+                window.addLog(`Apagado da nuvem: ${item.descricao}`, 'error');
                 window.fecharModal(); 
             } 
         }
@@ -763,21 +715,17 @@
         window.abrirModal = function(item, isNovo) {
             itemAtual = item; const isCego = document.getElementById('modo-cego')?.checked;
             document.getElementById('m-nome-edit').value = item.descricao; document.getElementById('m-nome-edit').readOnly = !isNovo;
-            document.getElementById('m-un-edit').value = item.unidade; document.getElementById('m-loc-cod').innerText = `📍 ${item.local} | CÓD: ${item.codigo}`;
+            document.getElementById('m-un-edit').value = item.unidade || 'UN'; 
+            document.getElementById('m-loc-cod').innerText = `📍 ${item.local} | CÓD: ${item.codigo}`;
             document.getElementById('m-gtin').innerText = "GTIN: " + (item.gtin || "N/A");
             
             document.getElementById('modal-sist-area').style.display = isCego ? 'none' : 'block';
-            document.getElementById('m-sist-val').innerText = `SISTEMA: ${item.sistema} ${item.unidade}`;
+            document.getElementById('m-sist-val').innerText = `SISTEMA: ${item.sistema} ${item.unidade || 'UN'}`;
             document.getElementById('m-cmc-val').innerText = `CMC: R$ ${(item.cmc || 0).toFixed(2)}`;
             
             if(indexEdicao === -1) {
                 document.getElementById('m-qtd').value = ''; document.getElementById('m-lote').value = '';
                 document.getElementById('m-validade').value = ''; 
-                
-                const alertRed = document.getElementById('m-venc-alerta-red');
-                const alertOrange = document.getElementById('m-venc-alerta-orange');
-                if (alertRed) alertRed.style.display = 'none';
-                if (alertOrange) alertOrange.style.display = 'none';
                 
                 const idxAnt = contagens.findIndex(c => c.codigo === item.codigo && c.local === item.local);
                 document.getElementById('m-aviso-dup').style.display = idxAnt !== -1 ? 'block' : 'none';
@@ -791,7 +739,7 @@
             document.getElementById('modal').style.display = "flex"; setTimeout(() => document.getElementById('m-qtd').focus(), 300);
         }
 
-        // SALVAMENTO ROBUSTO SEM RISCO DE TRAVAR O MODAL
+        // SALVAMENTO SEGURO E INSTANTÂNEO COM FECHO DE MODAL IMEDIATO
         window.salvarFinal = function(modo) {
             if (!currentUser) return window.showToast("A aguardar ligação à nuvem...", "error");
             window.esteCalculo(document.getElementById('m-qtd')); 
@@ -810,20 +758,25 @@
                 targetId = contagens[indexEdicao].id; 
             } else if (idxAnt !== -1) { 
                 targetId = contagens[idxAnt].id; 
-                if(modo === 'somar') novaQtd += contagens[idxAnt].fisico; 
+                if(modo === 'somar') novaQtd += Number(contagens[idxAnt].fisico || 0); 
             }
 
-            const codRaw = itemAtual.codigo ? String(itemAtual.codigo).replace(/[^a-zA-Z0-9]/g, '') : '';
-            const locRaw = itemAtual.local ? String(itemAtual.local).replace(/[^a-zA-Z0-9]/g, '') : '';
-            const uniqueFallback = `${codRaw}_${locRaw}_${Date.now()}`;
-            const docId = targetId || itemAtual.id || uniqueFallback;
+            const codRaw = String(itemAtual.codigo || '').replace(/[^a-zA-Z0-9]/g, '');
+            const locRaw = String(itemAtual.local || '').replace(/[^a-zA-Z0-9]/g, '');
+            const docId = targetId || `${codRaw}_${locRaw}`;
             
             const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
 
             const payload = {
-                ...itemAtual, 
+                codigo: itemAtual.codigo,
+                descricao: itemAtual.descricao,
+                local: itemAtual.local,
+                sistema: itemAtual.sistema || 0,
+                unidade: itemAtual.unidade || 'UN',
+                familia: itemAtual.familia || 'SEM FAMÍLIA',
+                cmc: itemAtual.cmc || 0,
                 fisico: novaQtd, 
-                dif: novaQtd - itemAtual.sistema, 
+                dif: novaQtd - (itemAtual.sistema || 0), 
                 cmc_unitario: itemAtual.cmc || 0, 
                 lote: document.getElementById('m-lote').value.toUpperCase(), 
                 validade: document.getElementById('m-validade').value, 
@@ -833,26 +786,26 @@
                 timestamp: Date.now()
             };
             
-            // Etapa 1: Fecha a interface imediatamente para não travar o ecrã do Operador
+            // Etapa 1: Fecha e limpa o ecrã instantaneamente (Sem lentidão!)
             window.fecharModal(); 
             const buscaInput = document.getElementById('busca-input');
             if (buscaInput) buscaInput.value = '';
             const resultados = document.getElementById('resultados');
             if (resultados) resultados.innerHTML = '';
             
-            window.showToast("A guardar...", "info");
+            window.showToast("A registar contagem...", "info");
 
-            // Etapa 2: Executa a gravação em rede de forma assíncrona (Background)
+            // Etapa 2: Grava na nuvem silenciosamente por trás
             setDoc(doc(colRef, docId), payload).then(() => {
-                window.showToast("Nuvem Sincronizada", "success"); 
+                window.showToast("Sincronizado na Nuvem", "success"); 
                 window.addLog(`${modo === 'somar' ? '+' : ''} ${novaQtd}x ${itemAtual.descricao}`);
             }).catch((e) => {
-                console.error("Falha ao salvar no Firestore:", e);
-                window.showToast("Falha na Nuvem! Verifique a sua rede.", "error");
+                console.error("Erro ao salvar contagem:", e);
+                window.showToast("Erro ao guardar na nuvem!", "error");
             });
         }
 
-        // MOTOR DE RENDERIZAÇÃO BLINDADO A 100% CONTRA VALORES INEXISTENTES OU NaN
+        // RENDERIZAÇÃO DA TABELA (Combina o catálogo Omie importado localmente e contagens na Nuvem)
         window.render = function() {
             if (!operadorAtual) return;
             const b = document.getElementById('tabela-body'); 
@@ -865,6 +818,7 @@
             let financeiro = 0; 
             let html = '';
             
+            // Exibe as contagens efetuadas pela equipa
             contagens.forEach((i, idx) => {
                 const fisico = Number(i.fisico) || 0;
                 const sistema = Number(i.sistema) || 0;
@@ -884,7 +838,7 @@
                     </tr>`;
                 }
             });
-            if (contagens.length > 100) html += `<tr><td colspan="5" style="color:var(--gray); padding:15px;">Mostrando os últimos 100...</td></tr>`;
+            if (contagens.length > 100) html += `<tr><td colspan="5" style="color:var(--gray); padding:15px;">Mostrando as últimas 100...</td></tr>`;
             
             b.innerHTML = html; 
             document.getElementById('dash-skus').innerText = contagens.length; 
@@ -901,7 +855,6 @@
             if (aba === 'relatorios') window.atualizarRelatorios();
         }
 
-        // MOTOR DE RELATÓRIOS TOTALMENTE PROTEGIDO CONTRA ERROS DE TIPO
         window.atualizarRelatorios = function() {
             const totalBase = baseDados.length > 0 ? baseDados.length : contagens.length;
             const totalContados = contagens.length;
@@ -1009,10 +962,9 @@
         window.limparTudo = async function() { 
             if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o chefe do setor pode reiniciar a auditoria!", "error");
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
-            if(confirm("APAGAR TUDO DA NUVEM? Esta ação irá eliminar as contagens de toda a equipa e o catálogo.")) { 
-                window.showToast("A limpar dados da nuvem...", "info");
+            if(confirm("APAGAR TODAS AS CONTABILIZAÇÕES DA NUVEM? Esta ação vai limpar as contagens de todos os operadores.")) { 
+                window.showToast("A limpar contagens da nuvem...", "info");
                 
-                // Limpa contagens em lotes rápidos
                 let batch = writeBatch(db);
                 let opCount = 0;
                 
@@ -1026,29 +978,11 @@
                     }
                 }
                 
-                // Limpa catálogo em lotes rápidos
-                const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
-                for(const b of baseDados) {
-                    const docId = b.id || `${b.codigo}_${b.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
-                    batch.delete(doc(colRefCatalog, docId));
-                    opCount++;
-                    if (opCount >= 100) {
-                        await batch.commit();
-                        batch = writeBatch(db);
-                        opCount = 0;
-                    }
-                }
-                
                 if (opCount > 0) {
                     await batch.commit();
                 }
                 
-                // Limpa localmente também e força sincronização em todos os operadores
-                baseDados = [];
-                localStorage.removeItem('catalogo_local');
-                window.atualizarFiltrosDOM();
-                
-                window.addLog("Auditoria limpa e reiniciada", "warning"); 
+                window.addLog("Contagens da auditoria reiniciadas", "warning"); 
                 window.fecharModalConfig();
             } 
         }
@@ -1076,8 +1010,23 @@
                                 window.addLog(`+1 Auto: ${itemContado.descricao}`); window.showToast(`+1 ${itemContado.descricao}`, 'success');
                             } else {
                                 let novoItem = itemBase || {codigo: cod, gtin: cod, descricao: "PRODUTO DESCONHECIDO", local: "SCAN", sistema: 0, cmc: 0, unidade: "UN"};
-                                const docId = novoItem.id || `${novoItem.codigo}_${novoItem.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
-                                const payload = {...novoItem, fisico: 1, dif: 1 - novoItem.sistema, cmc_unitario: novoItem.cmc || 0, lote: "", validade: "", obs: "MODO CONTÍNUO", operador: operadorAtual, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now()};
+                                const docId = `${novoItem.codigo}_${novoItem.local}`.replace(/[^a-zA-Z0-9_-]/g, '');
+                                const payload = {
+                                    codigo: novoItem.codigo,
+                                    descricao: novoItem.descricao,
+                                    local: novoItem.local,
+                                    sistema: 0,
+                                    unidade: novoItem.unidade,
+                                    fisico: 1, 
+                                    dif: 1, 
+                                    cmc_unitario: novoItem.cmc || 0, 
+                                    lote: "", 
+                                    validade: "", 
+                                    obs: "MODO CONTÍNUO", 
+                                    operador: operadorAtual, 
+                                    data: new Date().toLocaleString('pt-PT'), 
+                                    timestamp: Date.now()
+                                };
                                 await setDoc(doc(colRef, docId), payload);
                                 window.addLog(`Novo Auto: ${novoItem.descricao}`); window.showToast(`Adicionado: ${novoItem.descricao}`, 'success');
                             }
@@ -1096,31 +1045,11 @@
             if (html5QrCode) { try { const stopPromise = html5QrCode.stop(); if (stopPromise) { stopPromise.then(() => resetUI()).catch(() => resetUI()); } else { resetUI(); } } catch (err) { resetUI(); } } else { resetUI(); }
         }
 
-        // OUTROS EVENTOS DOM
-        document.getElementById('busca-input').oninput = function() {
-            const t = this.value.toUpperCase().trim(); const res = document.getElementById('resultados'); res.innerHTML = '';
-            if (t.length < 1) return;
-            const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
-            const fil = baseDados.filter(i => (i.descricao.includes(t) || i.codigo.includes(t) || i.gtin.includes(t)) && (lS.length === 0 || lS.includes(i.local)) && (fS.length === 0 || fS.includes(i.familia)));
-            if (fil.length > 0) {
-                fil.slice(0, 15).forEach(i => {
-                    const d = document.createElement('div'); d.className = 'item-res'; d.innerHTML = `<strong>${i.descricao}</strong><br><small style="color:var(--gray)">${i.local} | SIST: ${i.sistema}</small>`;
-                    d.onclick = () => { indexEdicao = -1; window.abrirModal(i, false); }; res.appendChild(d);
-                });
-            } else {
-                const btnNovo = document.createElement('button'); btnNovo.className = 'btn-blue'; btnNovo.style.marginTop = '10px'; btnNovo.innerHTML = `➕ NOVO PRODUTO: "${t}"`;
-                btnNovo.onclick = () => { indexEdicao = -1; window.abrirModal({codigo:'MAN_'+Date.now(), gtin:t, descricao:t, local: lS.length > 0 ? lS[0] : 'MANUAL', familia:'SEM FAMÍLIA', sistema:0, cmc:0, unidade:'UN'}, true); }; res.appendChild(btnNovo);
-            }
-        };
-
-        // CHEFE SELECIONA PLANILHA: PROCESSA LOCAIS E FAMÍLIAS SEM SUBIR AINDA (ADAPTADO PARA OMIE)
+        // LEITURA DO EXCEL LOCAL (Simples, Ultra Rápido, Não Envia Nada do Catálogo Para A Nuvem)
         document.getElementById('file-input').onchange = function(e) {
-            if (cargoAtual !== 'CHEFE') return window.showToast("Apenas o Chefe de Setor pode importar dados!", "error");
-            if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
-            
             if (!e.target.files || e.target.files.length === 0) return;
             
-            window.showToast("A processar dados da folha...", "info"); 
+            window.showToast("A ler arquivo Omie localmente...", "info"); 
             const reader = new FileReader();
             reader.onload = function(evt) {
                 try {
@@ -1131,13 +1060,11 @@
                     for(let r=0; r<rows.length; r++) {
                         if(!rows[r]) continue; let line = rows[r].map(c => String(c || "").toUpperCase().trim());
                         
-                        // Reconhecimento Dinâmico de Cabeçalhos Padrão Omie
                         if(line.includes("CÓDIGO DO PRODUTO") || line.includes("DESCRIÇÃO DO PRODUTO") || line.includes("CÓDIGO EAN")) {
                             hRow = r; 
                             line.forEach((cell, c) => {
                                 if(cell.includes("CÓDIGO DO PRODUTO")) idxCod = c; 
                                 else if(cell.includes("CÓDIGO EAN") || cell.includes("EAN") || cell.includes("GTIN")) idxGtin = c;
-                                
                                 if(cell.includes("DESCRIÇÃO DO PRODUTO") || cell.includes("DESCRIÇÃO")) idxDesc = c; 
                                 if(cell.includes("FAMÍLIA DE PRODUTO") || cell.includes("FAMÍLIA")) idxFam = c;
                                 if(cell === "QUANTIDADE" || cell.includes("ESTOQUE") || cell.includes("SALDO")) idxSist = c; 
@@ -1154,10 +1081,7 @@
                         return;
                     }
 
-                    // Processamos para a memória temporária
-                    itensTemporariosExcel = [];
-                    let preLocais = new Set();
-                    let preFamilias = new Set();
+                    const temporarios = [];
                     let localCounter = 0;
 
                     for(let r=hRow+1; r<rows.length; r++) {
@@ -1166,18 +1090,12 @@
                             localCounter++;
                             const l = idxLoc !== -1 ? String(row[idxLoc] || 'ESTOQUE PRINCIPAL').trim().toUpperCase() : 'ESTOQUE PRINCIPAL'; 
                             const f = idxFam !== -1 ? String(row[idxFam] || 'SEM FAMÍLIA').trim().toUpperCase() : 'SEM FAMÍLIA';
-                            
-                            preLocais.add(l);
-                            preFamilias.add(f);
-
                             const codRaw = idxCod !== -1 ? String(row[idxCod] || '').trim().toUpperCase() : '';
-                            const idUnico = `${codRaw.replace(/[^a-zA-Z0-9]/g, '')}_${l.replace(/[^a-zA-Z0-9]/g, '')}_L${localCounter}`;
                             
                             const sistemaVal = parseFloat(String(row[idxSist] || '0').replace(',','.'));
                             const cmcVal = parseFloat(String(row[idxCmc] || '0').replace(',','.'));
 
-                            itensTemporariosExcel.push({ 
-                                id: idUnico,
+                            temporarios.push({ 
                                 codigo: codRaw, 
                                 descricao: String(row[idxDesc]).trim().toUpperCase(), 
                                 gtin: idxGtin !== -1 ? String(row[idxGtin] || '').trim() : '', 
@@ -1190,32 +1108,25 @@
                         }
                     }
 
-                    if (itensTemporariosExcel.length === 0) {
+                    if (temporarios.length === 0) {
                         window.showToast("Nenhum produto válido encontrado!", "error");
                         return;
                     }
 
-                    // Preenche a caixa de seleção de Locais Pré-Importação no HTML
-                    const preLocBox = document.getElementById('pre-locais-box');
-                    preLocBox.innerHTML = Array.from(preLocais).sort().map((l, i) => `
-                        <div class="multi-select-item">
-                            <input type="checkbox" class="pre-check-l" id="pre-loc-${i}" value="${l}" checked>
-                            <label for="pre-loc-${i}">${l}</label>
-                        </div>
-                    `).join('');
+                    baseDados = temporarios;
+                    
+                    // Salva na cache local do dispositivo para não ter de importar de cada vez que abre
+                    try {
+                        const catalogoString = JSON.stringify(baseDados);
+                        if (catalogoString.length < 4800000) {
+                            localStorage.setItem('catalogo_local', catalogoString);
+                        }
+                    } catch (e) { console.error("Falha ao salvar cache:", e); }
 
-                    // Preenche a caixa de seleção de Famílias Pré-Importação no HTML
-                    const preFamBox = document.getElementById('pre-familias-box');
-                    preFamBox.innerHTML = Array.from(preFamilias).sort().map((f, i) => `
-                        <div class="multi-select-item">
-                            <input type="checkbox" class="pre-check-f" id="pre-fam-${i}" value="${f}" checked>
-                            <label for="pre-fam-${i}">${f}</label>
-                        </div>
-                    `).join('');
-
-                    // Mostra o painel de filtros e foca o ecrã do utilizador
-                    document.getElementById('pre-import-filters').style.display = 'block';
-                    window.showToast("Planilha processada! Selecione os filtros para enviar.", "success");
+                    window.showToast(`Sucesso! ${baseDados.length} produtos carregados localmente.`, "success");
+                    window.atualizarFiltrosDOM();
+                    window.render();
+                    window.fecharModalConfig();
 
                 } catch (error) {
                     console.error("Erro ao ler Excel:", error);
@@ -1223,138 +1134,6 @@
                 }
             };
             reader.readAsArrayBuffer(e.target.files[0]);
-        };
-
-        // Função utilitária para aguardar um pequeno intervalo (previne bloqueio de execução móvel)
-        const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-        // NOVO MOTOR DE SUBIDA EM LOTE BLINDADO CONTRA FALHAS E TIMEOUTS (VERSÃO PRO)
-        document.getElementById('btn-confirmar-subida').onclick = async function () {
-            if (cargoAtual !== 'CHEFE') {
-                return window.showToast("Operação não permitida!", "error");
-            }
-        
-            if (!currentUser) {
-                return window.showToast("Sem ligação à nuvem.", "error");
-            }
-        
-            if (itensTemporariosExcel.length === 0) {
-                return window.showToast("Selecione uma planilha válida!", "warning");
-            }
-        
-            const btnConfirmar = document.getElementById('btn-confirmar-subida');
-        
-            btnConfirmar.disabled = true;
-            btnConfirmar.innerText = "A PROCESSAR...";
-        
-            try {
-                const preLocsEscolhidos = Array.from(document.querySelectorAll('.pre-check-l:checked')).map(cb => cb.value);
-                const preFamsEscolhidas = Array.from(document.querySelectorAll('.pre-check-f:checked')).map(cb => cb.value);
-        
-                if (preLocsEscolhidos.length === 0) {
-                    throw new Error("Selecione pelo menos um Local!");
-                }
-        
-                if (preFamsEscolhidas.length === 0) {
-                    throw new Error("Selecione pelo menos uma Família!");
-                }
-        
-                let itensParaSubir = itensTemporariosExcel.filter(item =>
-                    preLocsEscolhidos.includes(item.local) &&
-                    preFamsEscolhidas.includes(item.familia)
-                );
-        
-                if (itensParaSubir.length === 0) {
-                    throw new Error("Nenhum produto corresponde aos filtros!");
-                }
-        
-                // REMOVE ITENS INVÁLIDOS E PREVINE CRASH NO FIRESTORE
-                itensParaSubir = itensParaSubir.filter(item => {
-                    if (!item) return false;
-                    if (!item.codigo) return false;
-                    if (!item.descricao) return false;
-                    try {
-                        JSON.stringify(item);
-                        return true;
-                    } catch {
-                        return false;
-                    }
-                });
-        
-                if (!confirm(`Confirmar envio de ${itensParaSubir.length} produtos?`)) {
-                    btnConfirmar.disabled = false;
-                    btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS";
-                    return;
-                }
-        
-                window.showToast(`Preparados ${itensParaSubir.length} itens.`, "info");
-        
-                const colRefCatalog = collection(db, 'artifacts', appId, 'public', 'data', 'catalogo');
-        
-                // CHUNK SIZE REDUZIDO PARA MAIOR ESTABILIDADE EM REDES MÓVEIS
-                const chunkSize = 100;
-                let enviados = 0;
-        
-                for (let i = 0; i < itensParaSubir.length; i += chunkSize) {
-                    const chunk = itensParaSubir.slice(i, i + chunkSize);
-                    let tentativa = 0;
-                    let sucesso = false;
-        
-                    while (!sucesso && tentativa < 3) {
-                        tentativa++;
-                        try {
-                            const batch = writeBatch(db);
-        
-                            chunk.forEach(item => {
-                                const codigoSeguro = String(item.codigo || '').replace(/[^a-zA-Z0-9]/g, '');
-                                const localSeguro = String(item.local || '').replace(/[^a-zA-Z0-9]/g, '');
-                                const docId = item.id || `${codigoSeguro}_${localSeguro}`;
-        
-                                batch.set(doc(colRefCatalog, docId), {
-                                    ...item,
-                                    updatedAt: Date.now()
-                                });
-                            });
-        
-                            console.log(`Enviando lote ${Math.floor(i / chunkSize) + 1}`);
-                            await batch.commit();
-        
-                            sucesso = true;
-                            enviados += chunk.length;
-        
-                            const progresso = Math.min(100, Math.round((enviados / itensParaSubir.length) * 100));
-                            window.showToast(`Upload ${progresso}% concluído`, "info");
-                            console.log(`Lote enviado com sucesso`);
-        
-                            // PAUSA CRÍTICA DE DESCANSO PARA A REDE (Evita bloqueio da Google e falhas silenciosas)
-                            await delay(500);
-                        } catch (erroLote) {
-                            console.error("Erro no lote:", erroLote);
-                            if (tentativa >= 3) {
-                                throw erroLote;
-                            }
-                            await delay(1500);
-                        }
-                    }
-                }
-        
-                window.showToast(`${enviados} produtos enviados com sucesso!`, "success");
-                window.addLog(`Catálogo sincronizado (${enviados} itens)`);
-        
-                itensTemporariosExcel = [];
-                document.getElementById('pre-import-filters').style.display = 'none';
-                document.getElementById('file-input').value = '';
-        
-                await window.sincronizarCatalogoNuvem();
-                window.fecharModalConfig();
-        
-            } catch (error) {
-                console.error(error);
-                window.showToast(error.message || "Erro no upload.", "error");
-            } finally {
-                btnConfirmar.disabled = false;
-                btnConfirmar.innerText = "🚀 ENVIAR SELECIONADOS";
-            }
         };
 
         window.checkLogin();
