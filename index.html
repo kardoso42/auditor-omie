@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auditor Estoque V-43.0 - Local-Cloud Sinc</title>
+    <title>Auditor Estoque V-45.0 - Local-Cloud Sinc</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
@@ -415,6 +415,19 @@
             <div id="m-aviso-dup" style="display:none; background:#fef08a; color:#854d0e; padding:10px; border-radius:8px; margin-bottom:10px; text-align:center; font-size: 12px;"></div>
             <label style="font-size: 11px; font-weight: bold;">PRODUTO:</label>
             <input type="text" id="m-nome-edit" style="margin-bottom:10px; font-weight:bold;">
+            
+            <!-- NOVO: Campo de Código de Barras Editável + Botão de Câmera específico para o GTIN -->
+            <div style="display:flex; gap:10px; margin-bottom:10px; align-items:flex-end;">
+                <div style="flex:1;">
+                    <label style="font-size:11px; font-weight:bold;">CÓDIGO DE BARRAS (GTIN/EAN):</label>
+                    <input type="text" id="m-gtin-edit" placeholder="Nenhum código cadastrado" style="margin-top:4px;">
+                </div>
+                <button type="button" class="btn-orange" id="btn-ler-gtin-modal" onclick="controlarCameraModal()" style="padding:14px 6px; font-size:11px; width:95px; margin:0; text-transform:none; height:46px;">📷 LER GTIN</button>
+            </div>
+            
+            <!-- Visor de câmara específico para ler o GTIN dentro do modal de contagem -->
+            <div id="reader-modal" style="display:none; width:100%; margin-bottom:10px; border-radius: 8px; overflow: hidden; border: 2px solid var(--orange);"></div>
+
             <div class="m-info-box">
                 <p id="m-gtin" style="font-size:11px; margin:0; color:var(--orange); font-weight:bold;"></p>
                 <p id="m-loc-cod" style="font-size:11px; margin:4px 0; color:var(--gray);"></p>
@@ -499,6 +512,7 @@
         // Estado do Gatilho Manual
         window.gatilhoDisparado = false;
         window.gatilhoTimeout = null;
+        window.html5QrCodeModal = null; // Scanner do modal de edição/cadastramento de GTIN
 
         // Função de remoção automática de acentos para busca inteligente e sem falhas
         const removerAcentos = (str) => {
@@ -734,7 +748,12 @@
 
         window.abrirModalConfig = function() { document.getElementById('modal-config').style.display = "flex"; }
         window.fecharModalConfig = function() { document.getElementById('modal-config').style.display = "none"; }
-        window.fecharModal = function() { document.getElementById('modal').style.display = "none"; indexEdicao = -1; diasParaVencer = null; }
+        window.fecharModal = function() { 
+            window.desligarCamModal(); // Garante o desligamento da camera do modal ao fechar
+            document.getElementById('modal').style.display = "none"; 
+            indexEdicao = -1; 
+            diasParaVencer = null; 
+        }
 
         window.getLocsSel = function() { return Array.from(document.querySelectorAll('.check-l:checked')).map(cb => cb.value); }
 
@@ -782,6 +801,7 @@
                         fisico: 0, 
                         dif: 0 - i.sistema, 
                         cmc_unitario: i.cmc || 0, 
+                        gtin: i.gtin || '',
                         lote: "", 
                         validade: "", 
                         obs: "NÃO ENCONTRADO", 
@@ -821,12 +841,69 @@
             } 
         }
 
+        // CONTROLO DE CÂMARA EXCLUSIVO DO MODAL (Para mapear código de barras em massa para o produto)
+        window.controlarCameraModal = async function() {
+            const btn = document.getElementById('btn-ler-gtin-modal');
+            const readerDiv = document.getElementById('reader-modal');
+            if (btn.innerText.includes("LER GTIN")) {
+                readerDiv.style.display = "block";
+                btn.innerText = "🛑 PARAR";
+                btn.className = "btn-red";
+                if (!window.html5QrCodeModal) {
+                    window.html5QrCodeModal = new Html5Qrcode("reader-modal");
+                }
+                try {
+                    await window.html5QrCodeModal.start(
+                        { facingMode: "environment" },
+                        { fps: 10, qrbox: 250 },
+                        (txt) => {
+                            window.playBeep('success');
+                            document.getElementById('m-gtin-edit').value = txt.trim().toUpperCase();
+                            window.desligarCamModal();
+                        }
+                    );
+                } catch (err) {
+                    window.showToast("Falha na câmara para o código de barras.", "error");
+                    window.desligarCamModal();
+                }
+            } else {
+                window.desligarCamModal();
+            }
+        };
+
+        window.desligarCamModal = function() {
+            const resetUI = () => {
+                const rDiv = document.getElementById('reader-modal');
+                if (rDiv) rDiv.style.display = "none";
+                const btn = document.getElementById('btn-ler-gtin-modal');
+                if (btn) {
+                    btn.innerText = "📷 LER GTIN";
+                    btn.className = "btn-orange";
+                }
+            };
+            if (window.html5QrCodeModal) {
+                try {
+                    const stopPromise = window.html5QrCodeModal.stop();
+                    if (stopPromise) {
+                        stopPromise.then(() => resetUI()).catch(() => resetUI());
+                    } else {
+                        resetUI();
+                    }
+                } catch (err) {
+                    resetUI();
+                }
+            } else {
+                resetUI();
+            }
+        };
+
         window.abrirModal = function(item, isNovo) {
             itemAtual = item; const isCego = document.getElementById('modo-cego')?.checked;
             document.getElementById('m-nome-edit').value = item.descricao; document.getElementById('m-nome-edit').readOnly = !isNovo;
             document.getElementById('m-un-edit').value = item.unidade || 'UN'; 
             document.getElementById('m-loc-cod').innerText = `📍 ${item.local} | CÓD: ${item.codigo}`;
             document.getElementById('m-gtin').innerText = "GTIN: " + (item.gtin || "N/A");
+            document.getElementById('m-gtin-edit').value = item.gtin || ''; // Preenche o campo de código de barras editável
             
             document.getElementById('modal-sist-area').style.display = isCego ? 'none' : 'block';
             document.getElementById('m-sist-val').innerText = `SISTEMA: ${item.sistema} ${item.unidade || 'UN'}`;
@@ -877,6 +954,11 @@
             
             itemAtual.descricao = document.getElementById('m-nome-edit').value.toUpperCase(); 
             itemAtual.unidade = document.getElementById('m-un-edit').value.toUpperCase();
+            
+            // Captura o código de barras atualizado digitado ou lido pelo operador
+            let novoGtin = document.getElementById('m-gtin-edit').value.trim().toUpperCase();
+            itemAtual.gtin = novoGtin;
+
             let obs = document.getElementById('m-obs').value.toUpperCase();
             
             const idxAnt = contagens.findIndex(c => c.codigo === itemAtual.codigo && c.local === itemAtual.local);
@@ -906,6 +988,7 @@
                 fisico: novaQtd, 
                 dif: novaQtd - (itemAtual.sistema || 0), 
                 cmc_unitario: itemAtual.cmc || 0, 
+                gtin: itemAtual.gtin || '', // Salva o GTIN novo/atualizado na nuvem!
                 lote: document.getElementById('m-lote').value.toUpperCase(), 
                 validade: document.getElementById('m-validade').value, 
                 obs: obs, 
@@ -914,6 +997,15 @@
                 timestamp: Date.now()
             };
             
+            // Atualiza localmente a baseDados para que o novo GTIN funcione de imediato nas próximas buscas locales
+            const baseIdx = baseDados.findIndex(b => b.codigo === itemAtual.codigo && b.local === itemAtual.local);
+            if (baseIdx !== -1) {
+                baseDados[baseIdx].gtin = novoGtin;
+                try {
+                    localStorage.setItem('catalogo_local', JSON.stringify(baseDados));
+                } catch (e) { console.error(e); }
+            }
+
             // Etapa 1: Fecha e limpa o ecrã instantaneamente (Sem lentidão!)
             window.fecharModal(); 
             const buscaInput = document.getElementById('busca-input');
@@ -1078,13 +1170,34 @@
             document.getElementById('m-obs').value = contagens[idx].obs || ''; 
         }
         
+        // MAPEAMENTO EXCLUSIVO DE EXPORTAÇÃO COMPATÍVEL COM OMIE (ENVIANDO EAN ATUALIZADO)
         window.baixarExcel = function(t) { 
             if (cargoAtual !== 'CHEFE') return window.showToast("Erro: Permissão apenas para o Chefe de Setor!", "error");
             if (contagens.length === 0) return window.showToast("Sem dados para exportar.", "warning"); 
-            const ws = XLSX.utils.json_to_sheet(t === 'erros' ? contagens.filter(i => i.dif !== 0) : contagens); 
+            
+            const dataToExport = (t === 'erros' ? contagens.filter(i => i.dif !== 0) : contagens).map(c => ({
+                "Código do Produto": c.codigo || '',
+                "Descrição do Produto": c.descricao || '',
+                "Família de Produto": c.familia || '',
+                "Código EAN / GTIN (Atualizado)": c.gtin || '', // Novo campo que extrai o EAN atualizado no inventário!
+                "Unidade": c.unidade || '',
+                "Quantidade Sistema": Number(c.sistema) || 0,
+                "Quantidade Física": Number(c.fisico) || 0,
+                "Diferença": Number(c.dif) || 0,
+                "CMC Unitário": Number(c.cmc_unitario) || 0,
+                "Impacto Financeiro": (Number(c.dif) || 0) * (Number(c.cmc_unitario) || 0),
+                "Local de Estoque": c.local || '',
+                "Lote": c.lote || '',
+                "Validade": c.validade || '',
+                "Observações": c.obs || '',
+                "Operador": c.operador || '',
+                "Data/Hora": c.data || ''
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(dataToExport); 
             const wb = XLSX.utils.book_new(); 
             XLSX.utils.book_append_sheet(wb, ws, "Auditoria"); 
-            XLSX.writeFile(wb, `Inventario_${cargoAtual}_${new Date().toLocaleDateString('pt-PT').replace(/\//g,'-')}.xlsx`); 
+            XLSX.writeFile(wb, `Inventario_Sincronizado_${new Date().toLocaleDateString('pt-PT').replace(/\//g,'-')}.xlsx`); 
         }
         
         window.limparTudo = async function() { 
@@ -1171,6 +1284,7 @@
                                     fisico: 1, 
                                     dif: 1, 
                                     cmc_unitario: novoItem.cmc || 0, 
+                                    gtin: novoItem.gtin || '',
                                     lote: "", 
                                     validade: "", 
                                     obs: "MODO CONTÍNUO", 
