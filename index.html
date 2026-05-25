@@ -3,22 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Auditor Estoque V-45.0 - Local-Cloud Sinc</title>
+    <title>Smart Estoque V-46.0 - Local-Cloud Sinc</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
         :root { 
-            --blue: #2563eb; --blue-dark: #1e40af; --green: #10b981; --red: #ef4444; 
-            --gray: #64748b; --orange: #f59e0b; --bg: #f8fafc; --surface: #ffffff;
-            --text: #334155; --border: #e2e8f0;
+            /* Nova Paleta Smart Estoque - Modo Claro */
+            --blue: #1B263B;        /* Azul Marinho Médio (Botões principais) */
+            --blue-dark: #0D1B2A;   /* Azul Marinho Escuro (Títulos e Destaques) */
+            --green: #28A745;       /* Verde da Paleta */
+            --red: #ef4444; 
+            --gray: #64748b; 
+            --orange: #FF8C00;      /* Laranja da Paleta */
+            --bg: #F2F4F7;          /* Fundo Gelo da Paleta */
+            --surface: #ffffff;     /* Cartões brancos para contraste */
+            --text: #0D1B2A;        /* Texto em azul marinho muito escuro */
+            --border: #e2e8f0;
+            --logo-bg: #ffffff;
         }
 
         body.dark-mode {
-            --blue: #3b82f6; --blue-dark: #93c5fd; --green: #34d399; --red: #f87171; 
-            --gray: #94a3b8; --orange: #fbbf24; --bg: #0f172a; --surface: #1e293b;
-            --text: #f1f5f9; --border: #334155;
+            /* Nova Paleta Smart Estoque - Modo Escuro */
+            --blue: #FF8C00;        /* Botões passam a Laranja para destaque no fundo escuro */
+            --blue-dark: #F2F4F7;   /* Títulos claros */
+            --green: #28A745; 
+            --red: #f87171; 
+            --gray: #94a3b8; 
+            --orange: #FF8C00; 
+            --bg: #0D1B2A;          /* Fundo principal passa a Azul Marinho Escuro */
+            --surface: #1B263B;     /* Cartões assumem o Azul Marinho Médio */
+            --text: #F2F4F7;        /* Texto claro */
+            --border: #2c3e50;      /* Linhas divisórias em tom marinho mesclado */
+            --logo-bg: #F2F4F7;     /* Fundo do logo sempre claro para o contraste do vetor */
         }
         
         body { 
@@ -28,6 +46,33 @@
         }
         
         .app-header { text-align: center; margin-bottom: 20px; margin-top: 10px; position: relative; padding-right: 45px; }
+        
+        /* Estilo premium da logo Sollus integrada de alta fidelidade */
+        .app-logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px auto;
+            width: 85px;
+            height: 85px;
+            background: var(--logo-bg);
+            border-radius: 22px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border);
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+        }
+        .app-logo:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        }
+        .app-logo img {
+            width: 80%;
+            height: 80%;
+            object-fit: contain; /* Garante que a logo não fique esticada */
+            display: block;
+        }
+
         .app-header h2 { margin: 0; color: var(--blue-dark); font-weight: 700; font-size: 22px; letter-spacing: -0.5px; }
         .app-header p { margin: 4px 0 0; font-size: 12px; color: var(--gray); font-weight: 500; }
         
@@ -85,7 +130,6 @@
         .btn-red { background: var(--red); color: white; }
         .btn-outline { background: transparent; border: 1.5px solid var(--blue); color: var(--blue); font-size: 11px; padding: 12px; }
         
-        /* Layout do MiniTeclado Virtual de atalhos matemáticos no modal */
         .calc-shortcuts {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -108,7 +152,6 @@
             background: var(--border);
         }
 
-        /* Estilização para o novo botão de gatilho do leitor */
         #btn-gatilho {
             font-size: 14px;
             padding: 18px;
@@ -204,7 +247,11 @@
     <!-- TELA DE LOGIN -->
     <div id="view-login">
         <div class="login-card">
-            <h2 style="color: var(--blue-dark); margin-top: 0; font-size: 24px;">Auditor Estoque</h2>
+            <!-- Logo Oficial via Arquivo (GitHub/Vercel) -->
+            <div class="app-logo">
+                <img src="logo.png" alt="Logo Smart Estoque" onerror="this.style.display='none'">
+            </div>
+            <h2 style="color: var(--blue-dark); margin-top: 0; font-size: 24px;">Smart Estoque</h2>
             <p style="color: var(--gray); font-size: 13px; margin-bottom: 20px;">Auditoria de Inventário com Ficheiro Local</p>
             
             <input type="text" id="login-nome" placeholder="Seu Nome ou Matrícula" style="margin-bottom: 15px; text-align: center; font-weight: bold;">
@@ -216,7 +263,11 @@
     <!-- APLICAÇÃO PRINCIPAL -->
     <div id="view-app" style="display:none;">
         <div class="app-header">
-            <h2>Auditor Estoque <span class="cloud-badge" style="background: var(--blue);">📄 LOCAL FILE</span></h2>
+            <!-- Logo Oficial via Arquivo Integrada no Cabeçalho -->
+            <div class="app-logo">
+                <img src="logo.png" alt="Logo Smart Estoque" onerror="this.style.display='none'">
+            </div>
+            <h2>Smart Estoque <span class="cloud-badge" style="background: var(--blue);">📄 LOCAL FILE</span></h2>
             <p>Contagens Sincronizadas na Nuvem</p>
             <div class="print-hide">
                 <span class="user-badge">👤 <span id="lbl-operador">Operador</span> <button onclick="fazerLogout()" style="background:none; border:none; color:rgba(255,255,255,0.7); padding:0; margin-left:8px; cursor:pointer; font-size:10px; font-weight:bold;">SAIR</button></span>
@@ -416,7 +467,7 @@
             <label style="font-size: 11px; font-weight: bold;">PRODUTO:</label>
             <input type="text" id="m-nome-edit" style="margin-bottom:10px; font-weight:bold;">
             
-            <!-- NOVO: Campo de Código de Barras Editável + Botão de Câmera específico para o GTIN -->
+            <!-- Campo de Código de Barras Editável + Botão de Câmera específico para o GTIN -->
             <div style="display:flex; gap:10px; margin-bottom:10px; align-items:flex-end;">
                 <div style="flex:1;">
                     <label style="font-size:11px; font-weight:bold;">CÓDIGO DE BARRAS (GTIN/EAN):</label>
@@ -439,7 +490,6 @@
             <div style="display:flex; gap:10px; margin-bottom:4px;">
                 <div style="flex:1">
                     <label style="font-size:11px; font-weight:bold;">QTD FÍSICA (ACEITA CÁLCULOS):</label>
-                    <!-- Mudamos o inputmode para "text" para que o teclado completo com letras e caracteres de símbolos possa ser aberto no celular -->
                     <input type="text" id="m-qtd" placeholder="Ex: 3*12+4" onblur="esteCalculo(this)" style="font-size:20px; font-weight:bold; border:2px solid var(--blue);">
                 </div>
                 <div style="width:75px"><label style="font-size:11px; font-weight:bold;">UN:</label><input type="text" id="m-un-edit"></div>
@@ -749,7 +799,7 @@
         window.abrirModalConfig = function() { document.getElementById('modal-config').style.display = "flex"; }
         window.fecharModalConfig = function() { document.getElementById('modal-config').style.display = "none"; }
         window.fecharModal = function() { 
-            window.desligarCamModal(); // Garante o desligamento da camera do modal ao fechar
+            window.desligarCamModal(); 
             document.getElementById('modal').style.display = "none"; 
             indexEdicao = -1; 
             diasParaVencer = null; 
@@ -841,7 +891,6 @@
             } 
         }
 
-        // CONTROLO DE CÂMARA EXCLUSIVO DO MODAL (Para mapear código de barras em massa para o produto)
         window.controlarCameraModal = async function() {
             const btn = document.getElementById('btn-ler-gtin-modal');
             const readerDiv = document.getElementById('reader-modal');
@@ -903,13 +952,12 @@
             document.getElementById('m-un-edit').value = item.unidade || 'UN'; 
             document.getElementById('m-loc-cod').innerText = `📍 ${item.local} | CÓD: ${item.codigo}`;
             document.getElementById('m-gtin').innerText = "GTIN: " + (item.gtin || "N/A");
-            document.getElementById('m-gtin-edit').value = item.gtin || ''; // Preenche o campo de código de barras editável
+            document.getElementById('m-gtin-edit').value = item.gtin || ''; 
             
             document.getElementById('modal-sist-area').style.display = isCego ? 'none' : 'block';
             document.getElementById('m-sist-val').innerText = `SISTEMA: ${item.sistema} ${item.unidade || 'UN'}`;
             document.getElementById('m-cmc-val').innerText = `CMC: R$ ${(item.cmc || 0).toFixed(2)}`;
             
-            // VERIFICAÇÃO CRÍTICA MÚLTIPLOS DISPOSITIVOS (BUSCA DIRETAMENTE NAS CONTABILIZAÇÕES DA NUVEM)
             const idxAnt = contagens.findIndex(c => c.codigo === item.codigo && c.local === item.local);
             const alertDup = document.getElementById('m-aviso-dup');
             
@@ -944,7 +992,6 @@
             document.getElementById('modal').style.display = "flex"; setTimeout(() => document.getElementById('m-qtd').focus(), 300);
         }
 
-        // SALVAMENTO SEGURO E INSTANTÂNEO COM FECHO DE MODAL IMEDIATO
         window.salvarFinal = function(modo) {
             if (!currentUser) return window.showToast("A aguardar ligação à nuvem...", "error");
             window.esteCalculo(document.getElementById('m-qtd')); 
@@ -955,7 +1002,6 @@
             itemAtual.descricao = document.getElementById('m-nome-edit').value.toUpperCase(); 
             itemAtual.unidade = document.getElementById('m-un-edit').value.toUpperCase();
             
-            // Captura o código de barras atualizado digitado ou lido pelo operador
             let novoGtin = document.getElementById('m-gtin-edit').value.trim().toUpperCase();
             itemAtual.gtin = novoGtin;
 
@@ -988,7 +1034,7 @@
                 fisico: novaQtd, 
                 dif: novaQtd - (itemAtual.sistema || 0), 
                 cmc_unitario: itemAtual.cmc || 0, 
-                gtin: itemAtual.gtin || '', // Salva o GTIN novo/atualizado na nuvem!
+                gtin: itemAtual.gtin || '', 
                 lote: document.getElementById('m-lote').value.toUpperCase(), 
                 validade: document.getElementById('m-validade').value, 
                 obs: obs, 
@@ -997,7 +1043,6 @@
                 timestamp: Date.now()
             };
             
-            // Atualiza localmente a baseDados para que o novo GTIN funcione de imediato nas próximas buscas locales
             const baseIdx = baseDados.findIndex(b => b.codigo === itemAtual.codigo && b.local === itemAtual.local);
             if (baseIdx !== -1) {
                 baseDados[baseIdx].gtin = novoGtin;
@@ -1006,7 +1051,6 @@
                 } catch (e) { console.error(e); }
             }
 
-            // Etapa 1: Fecha e limpa o ecrã instantaneamente (Sem lentidão!)
             window.fecharModal(); 
             const buscaInput = document.getElementById('busca-input');
             if (buscaInput) buscaInput.value = '';
@@ -1015,7 +1059,6 @@
             
             window.showToast("A registar contagem...", "info");
 
-            // Etapa 2: Grava na nuvem silenciosamente por trás
             setDoc(doc(colRef, docId), payload).then(() => {
                 window.showToast("Sincronizado na Nuvem", "success"); 
                 window.addLog(`${modo === 'somar' ? '+' : ''} ${novaQtd}x ${itemAtual.descricao}`);
@@ -1025,7 +1068,6 @@
             });
         }
 
-        // RENDERIZAÇÃO DA TABELA (Combina o catálogo Omie importado localmente e contagens na Nuvem)
         window.render = function() {
             if (!operadorAtual) return;
             const b = document.getElementById('tabela-body'); 
@@ -1038,7 +1080,6 @@
             let financeiro = 0; 
             let html = '';
             
-            // Exibe as contagens efetuadas pela equipa
             contagens.forEach((i, idx) => {
                 const fisico = Number(i.fisico) || 0;
                 const sistema = Number(i.sistema) || 0;
@@ -1170,7 +1211,6 @@
             document.getElementById('m-obs').value = contagens[idx].obs || ''; 
         }
         
-        // MAPEAMENTO EXCLUSIVO DE EXPORTAÇÃO COMPATÍVEL COM OMIE (ENVIANDO EAN ATUALIZADO)
         window.baixarExcel = function(t) { 
             if (cargoAtual !== 'CHEFE') return window.showToast("Erro: Permissão apenas para o Chefe de Setor!", "error");
             if (contagens.length === 0) return window.showToast("Sem dados para exportar.", "warning"); 
@@ -1179,7 +1219,7 @@
                 "Código do Produto": c.codigo || '',
                 "Descrição do Produto": c.descricao || '',
                 "Família de Produto": c.familia || '',
-                "Código EAN / GTIN (Atualizado)": c.gtin || '', // Novo campo que extrai o EAN atualizado no inventário!
+                "Código EAN / GTIN (Atualizado)": c.gtin || '', 
                 "Unidade": c.unidade || '',
                 "Quantidade Sistema": Number(c.sistema) || 0,
                 "Quantidade Física": Number(c.fisico) || 0,
@@ -1234,25 +1274,22 @@
             const btn = document.getElementById('btn-cam');
             if (btn.innerText.includes("LIGAR")) {
                 document.getElementById('reader').style.display = "block"; 
-                document.getElementById('scanner-controls').style.display = "flex"; // Mostra os switches abaixo da câmera
+                document.getElementById('scanner-controls').style.display = "flex"; 
                 btn.innerText = "🛑 PARAR CÂMERA"; 
                 btn.className = "btn-red";
                 
-                window.toggleModoGatilho(); // Certifica o estado correto do gatilho ao iniciar
+                window.toggleModoGatilho(); 
 
                 if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
                 try {
                     await html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, async (txt) => {
-                        // Previne leitura duplicada rápida
                         if(window.lastScan === txt && Date.now() - window.lastScanTime < 2000) return;
                         
-                        // Validação do Modo Gatilho
                         const usarGatilho = document.getElementById('modo-gatilho').checked;
                         if (usarGatilho && !window.gatilhoDisparado) {
-                            return; // Ignora se o botão "⚡ DISPARAR LEITOR" não foi clicado!
+                            return; 
                         }
 
-                        // Se leu com sucesso no gatilho, reseta imediatamente o estado
                         if (usarGatilho) {
                             window.resetarEstadoGatilho();
                         }
@@ -1316,7 +1353,7 @@
         window.desligarCam = function() { 
             const resetUI = () => { 
                 document.getElementById('reader').style.display = "none"; 
-                document.getElementById('scanner-controls').style.display = "none"; // Oculta switches se desligado
+                document.getElementById('scanner-controls').style.display = "none"; 
                 document.getElementById('btn-cam').innerText = "📷 LIGAR SCANNER"; 
                 document.getElementById('btn-cam').className = "btn-blue"; 
                 window.resetarEstadoGatilho();
@@ -1337,7 +1374,6 @@
             }
         }
 
-        // OUTROS EVENTOS DOM - BUSCA EM TEMPO REAL ULTRA RÁPIDA (DIGITA E JÁ FILTRA!)
         document.getElementById('busca-input').oninput = function() {
             const rawT = this.value;
             const t = removerAcentos(rawT.toUpperCase().trim()); 
@@ -1346,7 +1382,6 @@
             
             if (t.length < 1) return;
             
-            // Filtros normalizados sem acentuação para busca resiliente
             const lS = window.getLocsSel().map(v => removerAcentos(v.toUpperCase())); 
             const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => removerAcentos(cb.value.toUpperCase()));
             
@@ -1360,7 +1395,6 @@
                 const itemLocal = removerAcentos(String(i.local || '').toUpperCase());
                 const itemFam = removerAcentos(String(i.familia || '').toUpperCase());
                 
-                // Aplica filtros se as caixas estiverem preenchidas
                 const matchesLocal = lS.length === 0 || lS.includes(itemLocal);
                 const matchesFamily = fS.length === 0 || fS.includes(itemFam);
                 
@@ -1397,7 +1431,6 @@
             }
         };
 
-        // LEITURA DO EXCEL LOCAL - ALTO RENDIMENTO COM MAPEAMENTO EXATO DE COLUNAS DO OMIE
         document.getElementById('file-input').onchange = function(e) {
             if (!e.target.files || e.target.files.length === 0) return;
             
@@ -1413,7 +1446,6 @@
                         if(!rows[r]) continue; 
                         let line = rows[r].map(c => String(c || "").trim().toUpperCase());
                         
-                        // Detecção exata de termos sem falsos positivos cruzados por .includes() soltos
                         if(line.includes("CÓDIGO DO PRODUTO") || line.includes("DESCRIÇÃO DO PRODUTO") || line.includes("LOCAL DE ESTOQUE")) {
                             hRow = r; 
                             line.forEach((cell, c) => {
@@ -1421,9 +1453,8 @@
                                 if(norm === "CÓDIGO DO PRODUTO" || norm === "CÓDIGO") idxCod = c; 
                                 else if(norm === "CÓDIGO EAN" || norm === "EAN" || norm === "GTIN") idxGtin = c;
                                 if(norm === "DESCRIÇÃO DO PRODUTO" || norm === "DESCRIÇÃO") idxDesc = c; 
-                                if(norm === "FAMÍLIA DE PRODUTO" || norm === "FAMÍLIA") idxFam = c;
+                                if(norm === "FAMÍLIA DE PRODUTO" || normail === "FAMÍLIA") idxFam = c;
                                 
-                                // Mapeamento preciso de Quantidade para não colidir com Local de Estoque
                                 if(norm === "QUANTIDADE" || norm === "QUANT" || norm === "SALDO") idxSist = c; 
                                 if(norm === "LOCAL DE ESTOQUE" || norm === "DESCRIÇÃO DO LOCAL" || norm === "LOCAL") idxLoc = c;
                                 
@@ -1440,17 +1471,13 @@
                     }
 
                     const temporarios = [];
-                    let localCounter = 0;
-
                     for(let r=hRow+1; r<rows.length; r++) {
                         let row = rows[r]; 
                         if (row && row[idxDesc]) {
-                            localCounter++;
                             const l = idxLoc !== -1 ? String(row[idxLoc] || 'ESTOQUE PRINCIPAL').trim().toUpperCase() : 'ESTOQUE PRINCIPAL'; 
                             const f = idxFam !== -1 ? String(row[idxFam] || 'SEM FAMÍLIA').trim().toUpperCase() : 'SEM FAMÍLIA';
                             const codRaw = idxCod !== -1 ? String(row[idxCod] || '').trim().toUpperCase() : '';
                             
-                            // Conversão segura de dados numéricos limpando notações monetárias
                             const sistemaVal = idxSist !== -1 ? parseFloat(String(row[idxSist] || '0').replace(',','.')) : 0;
                             const cmcVal = idxCmc !== -1 ? parseFloat(String(row[idxCmc] || '0').replace(',','.')) : 0;
 
@@ -1474,7 +1501,6 @@
 
                     baseDados = temporarios;
                     
-                    // Salva de forma persistente no telemóvel do operador
                     try {
                         const catalogoString = JSON.stringify(baseDados);
                         if (catalogoString.length < 4800000) {
@@ -1482,7 +1508,7 @@
                         }
                     } catch (e) { console.error("Falha ao salvar cache:", e); }
 
-                    window.showToast("Sucesso! " + baseDados.length + " produtos carregados localmente.", "success");
+                    window.showToast("Sucesso! " + baseDados.length + " produtos carregados.", "success");
                     window.atualizarFiltrosDOM();
                     window.render();
                     window.fecharModalConfig();
