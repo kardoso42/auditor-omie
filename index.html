@@ -68,9 +68,9 @@
             transform: scale(1.04);
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
         }
-        .app-logo img {
-            width: 100%;
-            height: 100%;
+        .app-logo svg, .app-logo img {
+            width: 100%; 
+            height: 100%; 
             object-fit: contain; /* Ajusta a imagem da logo perfeitamente sem cortar */
             display: block;
         }
@@ -243,15 +243,27 @@
             #view-relatorios { display: block !important; }
         }
     </style>
+    <!-- Script síncrono inicial para declarar funções de fallback de imagem no escopo global antes do carregamento do DOM/módulo -->
+    <script>
+        window.tentarCarregarDuplo = function(imgEl) {
+            // Se falhou ao ler o arquivo simples, tenta com extensão dupla .png.png que o github/Vercel cria às vezes
+            if (imgEl.src.indexOf('logo-smartestoque.png.png') === -1) {
+                imgEl.src = 'logo-smartestoque.png.png';
+            } else {
+                // Caso ambos falhem, oculta graciosamente para não quebrar a UI
+                imgEl.style.display = 'none';
+            }
+        };
+    </script>
 </head>
 <body>
 
     <!-- TELA DE LOGIN -->
     <div id="view-login">
         <div class="login-card">
-            <!-- Logo Oficial Carregada do GitHub -->
+            <!-- Logo Oficial via Fallback Inteligente -->
             <div class="app-logo">
-                <img src="logo-smartestoque.png.png" alt="Logo Smart Estoque" onerror="this.style.display='none'">
+                <img src="logo-smartestoque.png" alt="Logo Smart Estoque" id="logo-login-img" onerror="tentarCarregarDuplo(this)">
             </div>
             <h2 style="color: var(--blue-dark); margin-top: 0; font-size: 24px;">Smart Estoque</h2>
             <p style="color: var(--gray); font-size: 13px; margin-bottom: 20px;">Auditoria de Inventário com Ficheiro Local</p>
@@ -265,9 +277,9 @@
     <!-- APLICAÇÃO PRINCIPAL -->
     <div id="view-app" style="display:none;">
         <div class="app-header">
-            <!-- Logo Oficial Carregada do GitHub no Cabeçalho -->
+            <!-- Logo Oficial via Fallback Inteligente no Cabeçalho -->
             <div class="app-logo" style="width: 80px; height: 80px;">
-                <img src="logo-smartestoque.png.png" alt="Logo Smart Estoque" onerror="this.style.display='none'">
+                <img src="logo-smartestoque.png" alt="Logo Smart Estoque" id="logo-header-img" onerror="tentarCarregarDuplo(this)">
             </div>
             <h2>Smart Estoque <span class="cloud-badge" style="background: var(--blue);">📄 LOCAL FILE</span></h2>
             <p>Contagens Sincronizadas na Nuvem</p>
@@ -888,7 +900,7 @@
             if(indexEdicao !== -1 && confirm("APAGAR esta contagem da nuvem?")) { 
                 const item = contagens[indexEdicao];
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'contagens', item.id));
-                window.addLog(`Apagado da nuvem: ${item.descricao}`, 'error');
+                window.addLog("Apagado da nuvem: " + item.descricao, "error");
                 window.fecharModal(); 
             } 
         }
@@ -980,7 +992,7 @@
             } else {
                 alertDup.style.display = 'none';
                 document.getElementById('btn-salvar-normal').style.display = 'block';
-                document.getElementById('botoes-duplicado').style.none = 'none';
+                document.getElementById('botoes-duplicado').style.display = 'none';
             }
 
             if (indexEdicao === -1) {
@@ -1063,7 +1075,7 @@
 
             setDoc(doc(colRef, docId), payload).then(() => {
                 window.showToast("Sincronizado na Nuvem", "success"); 
-                window.addLog(`${modo === 'somar' ? '+' : ''} ${novaQtd}x ${itemAtual.descricao}`);
+                window.addLog(modo === 'somar' ? '+' : '' + " " + novaQtd + "x " + itemAtual.descricao);
             }).catch((e) => {
                 console.error("Erro ao salvar contagem:", e);
                 window.showToast("Erro ao guardar na nuvem!", "error");
