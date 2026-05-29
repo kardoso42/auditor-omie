@@ -1435,10 +1435,12 @@
                 btnNovo.innerHTML = `➕ NOVO PRODUTO: "${rawT}"`;
                 btnNovo.onclick = () => { 
                     indexEdicao = -1; 
+                    const tTrim = rawT.trim();
+                    const isNumeric = /^\d+$/.test(tTrim); // Verifica se o utilizador digitou apenas números (um código de barras)
                     window.abrirModal({
                         codigo: 'MAN_' + Date.now(), 
-                        gtin: rawT, 
-                        descricao: rawT.toUpperCase(), 
+                        gtin: isNumeric ? tTrim : '', // Preenche com o GTIN apenas se for puramente numérico
+                        descricao: isNumeric ? '' : tTrim.toUpperCase(), // Preenche a descrição apenas se for texto
                         local: lS.length > 0 ? lS[0] : 'MANUAL', 
                         familia: 'SEM FAMÍLIA', 
                         sistema: 0, 
@@ -1472,7 +1474,7 @@
                                 if(norm === "CÓDIGO DO PRODUTO" || norm === "CÓDIGO") idxCod = c; 
                                 else if(norm === "CÓDIGO EAN" || norm === "EAN" || norm === "GTIN") idxGtin = c;
                                 if(norm === "DESCRIÇÃO DO PRODUTO" || norm === "DESCRIÇÃO") idxDesc = c; 
-                                if(norm === "FAMÍLIA DE PRODUTO" || normail === "FAMÍLIA") idxFam = c;
+                                if(norm === "FAMÍLIA DE PRODUTO" || norm === "FAMÍLIA") idxFam = c;
                                 
                                 if(norm === "QUANTIDADE" || norm === "QUANT" || norm === "SALDO") idxSist = c; 
                                 if(norm === "LOCAL DE ESTOQUE" || norm === "DESCRIÇÃO DO LOCAL" || norm === "LOCAL") idxLoc = c;
