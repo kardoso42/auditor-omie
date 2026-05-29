@@ -7,7 +7,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        /* Importação da tipografia oficial da marca: Poppins */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
         
         :root { 
             /* Nova Paleta Smart Estoque - Modo Claro */
@@ -40,14 +41,15 @@
         }
         
         body { 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            /* Aplicação da fonte Poppins em todo o sistema */
+            font-family: 'Poppins', system-ui, -apple-system, sans-serif; 
             margin: 0; padding: 15px; background: var(--bg); color: var(--text); 
             -webkit-font-smoothing: antialiased; transition: background-color 0.3s, color 0.3s;
         }
         
         .app-header { text-align: center; margin-bottom: 20px; margin-top: 10px; position: relative; padding-right: 45px; }
-        
-        /* Estilo premium da logo Sollus integrada de alta fidelidade */
+
+        /* Estilo premium e limpo para o contentor da logo */
         .app-logo {
             display: flex;
             align-items: center;
@@ -58,18 +60,18 @@
             background: var(--logo-bg);
             border-radius: 22px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            border: none; /* Removemos a borda para ficar mais limpo */
+            border: none;
+            overflow: hidden; /* Recorta cantos arredondados na imagem */
             transition: transform 0.2s, box-shadow 0.2s;
-            overflow: hidden; /* Garante que a imagem é recortada nos cantos arredondados */
         }
         .app-logo:hover {
             transform: scale(1.04);
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
         }
-        .app-logo svg, .app-logo img {
-            width: 100%; /* Aumentamos para 100% */
-            height: 100%; /* Aumentamos para 100% */
-            object-fit: cover; /* Faz a imagem preencher toda a caixa sem distorcer */
+        .app-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Ajusta a imagem da logo perfeitamente sem cortar */
             display: block;
         }
 
@@ -247,23 +249,9 @@
     <!-- TELA DE LOGIN -->
     <div id="view-login">
         <div class="login-card">
-            <!-- Logo Oficial Vetorizada -->
+            <!-- Logo Oficial Carregada do GitHub -->
             <div class="app-logo">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="smartBlue" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="var(--blue)" />
-                            <stop offset="100%" stop-color="var(--blue-dark)" />
-                        </linearGradient>
-                        <linearGradient id="smartGreen" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="var(--green)" />
-                            <stop offset="100%" stop-color="#047857" />
-                        </linearGradient>
-                    </defs>
-                    <path d="M50 15 L85 35 L85 70 L50 90 L15 70 L15 35 Z" fill="none" stroke="url(#smartBlue)" stroke-width="8" stroke-linejoin="round" />
-                    <path d="M15 35 L50 55 L85 35 M50 55 L50 90" fill="none" stroke="url(#smartBlue)" stroke-width="8" stroke-linejoin="round" />
-                    <path d="M35 55 L45 65 L70 30" fill="none" stroke="url(#smartGreen)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
+                <img src="logo-smartestoque.png.png" alt="Logo Smart Estoque" onerror="this.style.display='none'">
             </div>
             <h2 style="color: var(--blue-dark); margin-top: 0; font-size: 24px;">Smart Estoque</h2>
             <p style="color: var(--gray); font-size: 13px; margin-bottom: 20px;">Auditoria de Inventário com Ficheiro Local</p>
@@ -277,23 +265,9 @@
     <!-- APLICAÇÃO PRINCIPAL -->
     <div id="view-app" style="display:none;">
         <div class="app-header">
-            <!-- Logo Oficial Vetorizada Integrada no Cabeçalho -->
-            <div class="app-logo">
-                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                        <linearGradient id="smartBlueHeader" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="var(--blue)" />
-                            <stop offset="100%" stop-color="var(--blue-dark)" />
-                        </linearGradient>
-                        <linearGradient id="smartGreenHeader" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stop-color="var(--green)" />
-                            <stop offset="100%" stop-color="#047857" />
-                        </linearGradient>
-                    </defs>
-                    <path d="M50 15 L85 35 L85 70 L50 90 L15 70 L15 35 Z" fill="none" stroke="url(#smartBlueHeader)" stroke-width="8" stroke-linejoin="round" />
-                    <path d="M15 35 L50 55 L85 35 M50 55 L50 90" fill="none" stroke="url(#smartBlueHeader)" stroke-width="8" stroke-linejoin="round" />
-                    <path d="M35 55 L45 65 L70 30" fill="none" stroke="url(#smartGreenHeader)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
+            <!-- Logo Oficial Carregada do GitHub no Cabeçalho -->
+            <div class="app-logo" style="width: 80px; height: 80px;">
+                <img src="logo-smartestoque.png.png" alt="Logo Smart Estoque" onerror="this.style.display='none'">
             </div>
             <h2>Smart Estoque <span class="cloud-badge" style="background: var(--blue);">📄 LOCAL FILE</span></h2>
             <p>Contagens Sincronizadas na Nuvem</p>
@@ -1006,7 +980,7 @@
             } else {
                 alertDup.style.display = 'none';
                 document.getElementById('btn-salvar-normal').style.display = 'block';
-                document.getElementById('botoes-duplicado').style.display = 'none';
+                document.getElementById('botoes-duplicado').style.none = 'none';
             }
 
             if (indexEdicao === -1) {
@@ -1189,11 +1163,11 @@
                         const dif = Number(i.dif) || (fisico - sistema);
                         const cmc = Number(i.cmc_unitario) || Number(i.cmc) || 0;
                         const impacto = dif * cmc; 
-                        const cor = impacto > 0 ? 'color: var(--green)' : 'color: var(--red)'; 
+                        const fill = impacto > 0 ? 'color: var(--green)' : 'color: var(--red)'; 
                         return `<tr>
                             <td style="text-align: left; font-size: 10px;">${(i.descricao || '').substring(0, 30)}...</td>
-                            <td style="font-weight: bold; ${cor}">${dif > 0 ? '+' + dif : dif}</td>
-                            <td style="font-weight: bold; ${cor}">R$ ${Math.abs(impacto).toLocaleString('pt-PT', {minimumFractionDigits: 2})}</td>
+                            <td style="font-weight: bold; ${fill}">${dif > 0 ? '+' + dif : dif}</td>
+                            <td style="font-weight: bold; ${fill}">R$ ${Math.abs(impacto).toLocaleString('pt-PT', {minimumFractionDigits: 2})}</td>
                         </tr>`; 
                     }).join('');
                 }
@@ -1413,7 +1387,7 @@
             const lS = window.getLocsSel().map(v => removerAcentos(v.toUpperCase())); 
             const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => removerAcentos(cb.value.toUpperCase()));
             
-            const fil = baseDados.filter(i => {
+            const fill = baseDados.filter(i => {
                 const desc = removerAcentos(String(i.descricao || '').toUpperCase());
                 const cod = removerAcentos(String(i.codigo || '').toUpperCase());
                 const gtin = removerAcentos(String(i.gtin || '').toUpperCase());
@@ -1429,8 +1403,8 @@
                 return matchesSearch && matchesLocal && matchesFamily;
             });
             
-            if (fil.length > 0) {
-                fil.slice(0, 15).forEach(i => {
+            if (fill.length > 0) {
+                fill.slice(0, 15).forEach(i => {
                     const d = document.createElement('div'); 
                     d.className = 'item-res'; 
                     d.innerHTML = `<strong>${i.descricao}</strong><br><small style="color:var(--gray)">${i.local} | SIST: ${i.sistema}</small>`;
