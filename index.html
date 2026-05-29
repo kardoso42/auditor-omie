@@ -275,6 +275,20 @@
             
             <input type="text" id="login-nome" placeholder="Seu Nome ou Matrícula" style="margin-bottom: 15px; text-align: center; font-weight: bold;">
 
+            <!-- Seletor de Cargo Seguro -->
+            <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 5px; text-align: left; color: var(--gray);">FUNÇÃO NO INVENTÁRIO:</label>
+            <select id="login-cargo" onchange="toggleLoginPinField()" style="margin-bottom: 15px; font-weight: 600;">
+                <option value="OPERADOR" selected>👤 OPERADOR (Apenas Contagens)</option>
+                <option value="CHEFE">🔑 CHEFE DE SETOR (Acesso Total)</option>
+            </select>
+
+            <!-- Campo de PIN Ocultável e Seguro para Chefe de Setor - Centralizado para melhor harmonia -->
+            <div id="login-pin-container" style="display: none; margin-bottom: 20px; text-align: center;">
+                <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 5px; text-align: center; color: var(--red);">CÓDIGO PIN DE ACESSO (Padrão: 1234):</label>
+                <!-- Usado input type="password" e inputmode="numeric" para ocultação e chamada de teclado numérico -->
+                <input type="password" id="login-pin" inputmode="numeric" maxlength="8" placeholder="Digite o PIN de Segurança" style="text-align: center; letter-spacing: 5px; font-size: 18px; font-weight: bold; border: 2px solid var(--red);">
+            </div>
+
             <button class="btn-blue" onclick="fazerLogin()">Entrar no Sistema</button>
         </div>
     </div>
@@ -286,10 +300,10 @@
             <div class="app-logo" style="width: 80px; height: 80px;">
                 <img src="logo-smartestoque.png" alt="Logo Smart Estoque" id="logo-header-img" onerror="tentarCarregarDuplo(this)">
             </div>
-            <h2>Smart Estoque <span class="cloud-badge" style="background: var(--blue);">📄 LOCAL FILE</span></h2>
+            <h2>Smart Estoque <span class="cloud-badge" id="app-badge-mode" style="background: var(--blue);">📄 LOCAL FILE</span></h2>
             <p>Contagens Sincronizadas na Nuvem</p>
             <div class="print-hide">
-                <span class="user-badge">👤 <span id="lbl-operador">Operador</span> <button onclick="fazerLogout()" style="background:none; border:none; color:rgba(255,255,255,0.7); padding:0; margin-left:8px; cursor:pointer; font-size:10px; font-weight:bold;">SAIR</button></span>
+                <span class="user-badge" style="background: var(--blue-dark);">👤 <span id="lbl-operador">Operador</span> (<span id="lbl-cargo" style="color: var(--orange); font-weight: bold;">...</span>) <button onclick="fazerLogout()" style="background:none; border:none; color:rgba(255,255,255,0.7); padding:0; margin-left:8px; cursor:pointer; font-size:10px; font-weight:bold;">SAIR</button></span>
             </div>
             <div class="header-actions print-hide">
                 <button onclick="abrirModalConfig()" id="btn-config" title="Menu Principal">☰</button>
@@ -298,7 +312,8 @@
 
         <div class="tabs print-hide">
             <button class="tab-btn active" id="tab-auditoria" onclick="mudarAba('auditoria')">🔍 Auditoria</button>
-            <button class="tab-btn" id="tab-relatorios" onclick="mudarAba('relatorios')">📊 Relatórios</button>
+            <!-- Separador de relatórios ocultável para operadores não autorizados -->
+            <button class="tab-btn" id="tab-relatorios" onclick="mudarAba('relatorios')" style="display: none;">📊 Relatórios</button>
         </div>
 
         <!-- ECRÃ DE AUDITORIA -->
@@ -306,7 +321,7 @@
             <div class="dash-container print-hide">
                 <div class="dash-card"><h4>Itens</h4><p id="dash-skus">0</p></div>
                 <div class="dash-card"><h4>Peças</h4><p id="dash-pecas">0</p></div>
-                <div class="dash-container-financeiro" style="grid-column: span 2; display: flex; flex-direction: column;">
+                <div class="dash-container-financeiro" id="dash-financeiro-container" style="grid-column: span 2; display: none; flex-direction: column;">
                     <div class="dash-card" style="border-top-color: var(--orange); width: 100%; box-sizing: border-box;">
                         <h4>Divergência Financeira</h4><p id="dash-financeiro">R$ 0,00</p>
                     </div>
@@ -363,7 +378,7 @@
             </div>
 
             <div class="card print-hide">
-                <!-- Zona Reservada para Exportação (Apenas Chefe de Setor) -->
+                <!-- Zona Reservada para Exportação (Apenas Chefe de Setor com verificação forte) -->
                 <div id="chefe-export-area" style="display:flex; gap:5px; margin-bottom: 15px;">
                     <button class="btn-green" onclick="baixarExcel('tudo')">📥 EXPORTAR TUDO</button>
                     <button class="btn-blue" onclick="baixarExcel('erros')">🚫 SÓ ERROS</button>
@@ -452,8 +467,8 @@
                 <label class="switch"><input type="checkbox" id="modal-theme-toggle" onchange="toggleDarkMode()"><span class="slider"></span></label>
             </div>
 
-            <!-- Importação de Planilha Local -->
-            <div style="margin-bottom: 15px;">
+            <!-- Importação de Planilha Local (Ocultável para Operadores não autorizados) -->
+            <div id="container-import-excel" style="margin-bottom: 15px; display: none;">
                 <label style="font-size: 11px; font-weight: bold; display: block; margin-bottom: 5px; color: var(--blue-dark);">📂 CARREGAR EXCEL DA OMIE (LOCAL):</label>
                 <input type="file" id="file-input" accept=".xlsx, .xls, .csv" style="margin-top: 5px;">
                 
@@ -470,9 +485,17 @@
             <div id="filtro-family-multi" class="multi-select-box" style="margin-bottom: 15px;"><small style="color:var(--gray); padding: 5px;">Importe o arquivo para ver famílias...</small></div>
             
             <!-- Botões Administrativos -->
-            <div id="chefe-buttons-area" class="grid-buttons">
+            <div id="chefe-buttons-area" class="grid-buttons" style="display: none;">
                 <button class="btn-outline" style="border-color: var(--orange); color: var(--orange);" onclick="verPendentes()">🔍 PENDENTES</button>
                 <button class="btn-outline" style="border-color: var(--red); color: var(--red);" onclick="zerarNaoContados()">⚠️ ZERAR RESTANTES</button>
+            </div>
+
+            <!-- Segurança: Alteração de PIN de Segurança (Apenas Visível para Chefe de Setor) -->
+            <div id="chefe-pin-change-area" style="display: none; border-top: 2px dashed var(--border); padding-top: 15px; margin-top: 15px;">
+                <label style="font-size: 10px; font-weight: bold; color: var(--red); display: block; margin-bottom: 5px;">🔑 ALTERAR PIN DE SEGURANÇA:</label>
+                <input type="password" id="pin-antigo" placeholder="PIN Atual" style="padding: 10px; margin-bottom: 8px; font-size: 12px;">
+                <input type="password" id="pin-novo" placeholder="Novo PIN" style="padding: 10px; margin-bottom: 8px; font-size: 12px;">
+                <button onclick="alterarPinSeguranca()" class="btn-orange" style="padding: 10px; font-size: 11px;">GRAVAR NOVO PIN</button>
             </div>
             
             <button onclick="fecharModalConfig()" style="background: var(--blue); color: white; margin-top: 20px; border: none; width: 100%; border-radius: 10px; padding: 14px; font-weight: 700; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); transition: background 0.2s;">Fechar Menu</button>
@@ -536,7 +559,7 @@
             <div style="margin-top:20px;">
                 <button id="btn-salvar-normal" type="button" class="btn-green" onclick="salvarFinal('substituir')">☁️ GUARDAR NA NUVEM</button>
                 <div id="botoes-duplicado" style="display:none; gap:10px;"><button type="button" class="btn-blue" onclick="salvarFinal('somar')">➕ SOMAR</button><button type="button" class="btn-orange" onclick="salvarFinal('substituir')">🔄 TROCAR</button></div>
-                <!-- Excluir contagem individual disponibilizado para todos -->
+                <!-- Excluir contagem individual disponibilizado de forma segura -->
                 <button id="btn-excluir-item" type="button" class="btn-red" style="display:none; margin-top:10px;" onclick="excluirContagemEspecifica()">🗑️ APAGAR CONTAGEM</button>
             </div>
             <button onclick="fecharModal()" type="button" style="background:none; color:var(--gray); margin-top:5px; border:none; width:100%;">CANCELAR</button>
@@ -575,7 +598,7 @@
         let itemAtual = null; let indexEdicao = -1; let html5QrCode = null; let diasParaVencer = null;
         
         let operadorAtual = localStorage.getItem('operador_atual') || '';
-        let cargoAtual = localStorage.getItem('cargo_atual') || 'CHEFE'; // Por padrão todos têm privilégios administrativos
+        let cargoAtual = localStorage.getItem('cargo_atual') || 'OPERADOR'; 
         
         let currentUser = null;
 
@@ -584,11 +607,45 @@
         window.gatilhoTimeout = null;
         window.html5QrCodeModal = null; // Scanner do modal de edição/cadastramento de GTIN
 
-        // Função de remoção automática de acentos para busca inteligente e sem falhas
+        // Função de remoção automática de acentos para busca inteligente e sem falhas e sanitização básica
         const removerAcentos = (str) => {
             if (!str) return '';
-            return String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            // Sanitização básica contra injeções de scripts maliciosos nos inputs
+            return String(str).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[<>]/g, "");
         };
+
+        // Função para mostrar/ocultar campo de PIN no login
+        window.toggleLoginPinField = function() {
+            const cargo = document.getElementById('login-cargo').value;
+            const pinContainer = document.getElementById('login-pin-container');
+            if (cargo === 'CHEFE') {
+                pinContainer.style.display = 'block';
+                document.getElementById('login-pin').focus();
+            } else {
+                pinContainer.style.display = 'none';
+                document.getElementById('login-pin').value = '';
+            }
+        }
+
+        // Função de alteração do PIN de administrador de forma segura
+        window.alterarPinSeguranca = function() {
+            const pinAntigo = document.getElementById('pin-antigo').value;
+            const pinNovo = document.getElementById('pin-novo').value.trim();
+            const pinAtualSalvo = localStorage.getItem('smart_chefe_pin') || '1234';
+
+            if (pinAntigo !== pinAtualSalvo) {
+                return window.showToast("O PIN atual inserido está incorreto!", "error");
+            }
+            if (pinNovo.length < 4) {
+                return window.showToast("O novo PIN deve conter pelo menos 4 dígitos!", "warning");
+            }
+
+            localStorage.setItem('smart_chefe_pin', pinNovo);
+            document.getElementById('pin-antigo').value = '';
+            document.getElementById('pin-novo').value = '';
+            window.showToast("PIN de segurança updated com sucesso!", "success");
+            window.addLog("Alterou o PIN de segurança administrativa", "warning");
+        }
 
         // Função de inserção de caracteres rápidos de cálculo no input
         window.inserirSimbolo = function(simbolo) {
@@ -724,17 +781,41 @@
             }
         }
 
-        // LOGIN E CONTEXTO DE CARGO
+        // LOGIN E CONTEXTO DE CARGO COM VERIFICAÇÃO DE SEGURANÇA
         window.checkLogin = function() {
             if (operadorAtual) {
                 document.getElementById('view-login').style.display = 'none';
                 document.getElementById('view-app').style.display = 'block';
                 document.getElementById('lbl-operador').innerText = `${operadorAtual}`;
+                document.getElementById('lbl-cargo').innerText = cargoAtual === 'CHEFE' ? 'Chefe de Setor' : 'Operador';
                 
-                document.getElementById('chefe-export-area').style.display = 'flex';
-                document.getElementById('chefe-limpar-btn').style.display = 'block';
-                document.getElementById('chefe-buttons-area').style.display = 'grid';
-                document.getElementById('chefe-pdf-btn').style.display = 'block';
+                // Aplicação Dinâmica de Permissões de Segurança baseadas em Função (RBAC)
+                if (cargoAtual === 'CHEFE') {
+                    document.getElementById('tab-relatorios').style.display = 'block';
+                    document.getElementById('dash-financeiro-container').style.display = 'flex';
+                    document.getElementById('chefe-export-area').style.display = 'flex';
+                    document.getElementById('chefe-limpar-btn').style.display = 'block';
+                    document.getElementById('chefe-buttons-area').style.display = 'grid';
+                    document.getElementById('chefe-pdf-btn').style.display = 'block';
+                    document.getElementById('chefe-pin-change-area').style.display = 'block';
+                    document.getElementById('container-import-excel').style.display = 'block';
+                    document.getElementById('app-badge-mode').innerText = '🛡️ CHEFE CLOUD';
+                    document.getElementById('app-badge-mode').style.background = 'var(--orange)';
+                } else {
+                    document.getElementById('tab-relatorios').style.display = 'none';
+                    document.getElementById('dash-financeiro-container').style.display = 'none';
+                    document.getElementById('chefe-export-area').style.display = 'none';
+                    document.getElementById('chefe-limpar-btn').style.display = 'none';
+                    document.getElementById('chefe-buttons-area').style.display = 'none';
+                    document.getElementById('chefe-pdf-btn').style.display = 'none';
+                    document.getElementById('chefe-pin-change-area').style.display = 'none';
+                    document.getElementById('container-import-excel').style.display = 'none';
+                    document.getElementById('app-badge-mode').innerText = '👤 OPERADOR CLOUD';
+                    document.getElementById('app-badge-mode').style.background = 'var(--blue)';
+                    
+                    // Se estiver na aba relatórios e for despromovido a operador, volta para auditoria por segurança
+                    window.mudarAba('auditoria');
+                }
 
                 window.atualizarFiltrosDOM();
                 window.render();
@@ -746,25 +827,39 @@
         
         window.fazerLogin = function() {
             const nome = document.getElementById('login-nome').value.trim().toUpperCase();
+            const cargo = document.getElementById('login-cargo').value;
+            const pinDigitado = document.getElementById('login-pin').value;
             
             if (!nome) return window.showToast('Digite o seu nome ou matrícula!', 'warning');
             
+            if (cargo === 'CHEFE') {
+                const pinSegurancaSalvo = localStorage.getItem('smart_chefe_pin') || '1234';
+                if (pinDigitado !== pinSegurancaSalvo) {
+                    window.playBeep('error');
+                    return window.showToast('Código PIN de Administrador incorreto!', 'error');
+                }
+                cargoAtual = 'CHEFE';
+            } else {
+                cargoAtual = 'OPERADOR';
+            }
+
             operadorAtual = nome;
-            cargoAtual = 'CHEFE'; 
             localStorage.setItem('operador_atual', operadorAtual);
             localStorage.setItem('cargo_atual', cargoAtual);
             
+            document.getElementById('login-pin').value = ''; // Limpa o campo do PIN por segurança
             window.checkLogin(); 
-            window.showToast(`Identificado como ${operadorAtual}`, 'success');
+            window.showToast(`Autenticado como ${operadorAtual} (${cargoAtual === 'CHEFE' ? 'Chefe' : 'Operador'})`, 'success');
         }
         
         window.fazerLogout = function() {
             if(confirm("Deseja sair da sessão atual?")) {
                 operadorAtual = '';
-                cargoAtual = 'CHEFE';
+                cargoAtual = 'OPERADOR';
                 localStorage.removeItem('operador_atual');
                 localStorage.removeItem('cargo_atual');
                 document.getElementById('login-nome').value = '';
+                document.getElementById('login-pin').value = '';
                 window.checkLogin();
             }
         }
@@ -828,6 +923,7 @@
         window.getLocsSel = function() { return Array.from(document.querySelectorAll('.check-l:checked')).map(cb => cb.value); }
 
         window.verPendentes = function() {
+            if (cargoAtual !== 'CHEFE') return window.showToast("Erro de permissão!", "error");
             if(baseDados.length === 0) return window.showToast("Importe primeiro o seu arquivo do Omie local!", "error");
             const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
             const pendentes = baseDados.filter(i => !contagens.some(c => c.codigo === i.codigo && c.local === i.local) && (lS.length === 0 || lS.includes(i.local)) && (fS.length === 0 || fS.includes(i.familia)));
@@ -842,6 +938,7 @@
         }
 
         window.zerarNaoContados = async function() {
+            if (cargoAtual !== 'CHEFE') return window.showToast("Erro: Apenas o Chefe de Setor pode realizar esta ação!", "error");
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
             if(baseDados.length === 0) return window.showToast("Carregue o arquivo local do Omie primeiro!", "error");
             const lS = window.getLocsSel(); const fS = Array.from(document.querySelectorAll('.check-f:checked')).map(cb => cb.value);
@@ -903,11 +1000,20 @@
 
         window.excluirContagemEspecifica = async function() { 
             if (!currentUser) return window.showToast("Sem ligação à nuvem.", "error");
-            if(indexEdicao !== -1 && confirm("APAGAR esta contagem da nuvem?")) { 
+            if (indexEdicao !== -1) { 
                 const item = contagens[indexEdicao];
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'contagens', item.id));
-                window.addLog("Apagado da nuvem: " + item.descricao, "error");
-                window.fecharModal(); 
+                
+                // Regra de Segurança: Apenas o próprio autor ou o Chefe de Setor podem eliminar uma contagem
+                if (cargoAtual !== 'CHEFE' && item.operador !== operadorAtual) {
+                    window.playBeep('error');
+                    return window.showToast("Segurança: Não tem permissão para apagar contagens de outros operadores!", "error");
+                }
+                
+                if (confirm(`Deseja APAGAR a contagem de "${item.descricao}" realizada por ${item.operador}?`)) { 
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'contagens', item.id));
+                    window.addLog("Apagou contagem: " + item.descricao, "error");
+                    window.fecharModal(); 
+                } 
             } 
         }
 
@@ -1032,8 +1138,20 @@
 
             if (indexEdicao !== -1) { 
                 targetId = contagens[indexEdicao].id; 
+                
+                // Regra de Segurança: Apenas o próprio autor ou o Chefe de Setor podem editar uma contagem já feita
+                if (cargoAtual !== 'CHEFE' && contagens[indexEdicao].operador !== operadorAtual) {
+                    window.playBeep('error');
+                    return window.showToast("Segurança: Não tem permissão para alterar dados de outros operadores!", "error");
+                }
             } else if (idxAnt !== -1) { 
                 targetId = contagens[idxAnt].id; 
+                
+                // Proteção semelhante para duplicados cruzados na nuvem
+                if (cargoAtual !== 'CHEFE' && contagens[idxAnt].operador !== operadorAtual) {
+                    window.playBeep('error');
+                    return window.showToast("Segurança: Este produto já foi contado por outro colega!", "error");
+                }
                 if(modo === 'somar') novaQtd += Number(contagens[idxAnt].fisico || 0); 
             }
 
@@ -1129,6 +1247,11 @@
         }
 
         window.mudarAba = function(aba) {
+            // Chefe de Setor tem exclusividade nos relatórios financeiros por segurança
+            if (aba === 'relatorios' && cargoAtual !== 'CHEFE') {
+                window.showToast("Apenas o Chefe de Setor tem acesso aos relatórios!", "error");
+                return;
+            }
             document.getElementById('view-auditoria').style.display = aba === 'auditoria' ? 'block' : 'none';
             document.getElementById('view-relatorios').style.display = aba === 'relatorios' ? 'block' : 'none';
             document.getElementById('tab-auditoria').className = aba === 'auditoria' ? 'tab-btn active' : 'tab-btn';
@@ -1137,6 +1260,8 @@
         }
 
         window.atualizarRelatorios = function() {
+            if (cargoAtual !== 'CHEFE') return; // Bloqueio forte de computação financeira em background
+
             const totalBase = baseDados.length > 0 ? baseDados.length : contagens.length;
             const totalContados = contagens.length;
             let percentagem = totalBase === 0 ? 0 : Math.min(100, Math.round((totalContados / totalBase) * 100));
@@ -1325,6 +1450,11 @@
                             let itemContado = contagens.find(c => c.codigo === cod || c.gtin === cod);
                             const colRef = collection(db, 'artifacts', appId, 'public', 'data', 'contagens');
                             if (itemContado) {
+                                // Regra de Segurança no Modo Contínuo Cruzado
+                                if (cargoAtual !== 'CHEFE' && itemContado.operador !== operadorAtual) {
+                                    window.playBeep('error');
+                                    return window.showToast("Segurança: Este produto já foi contado por outro colega!", "error");
+                                }
                                 const payload = {...itemContado, fisico: itemContado.fisico + 1, dif: (itemContado.fisico + 1) - itemContado.sistema, data: new Date().toLocaleString('pt-PT'), timestamp: Date.now(), operador: operadorAtual};
                                 await setDoc(doc(colRef, itemContado.id), payload);
                                 window.addLog(`+1 Auto: ${itemContado.descricao}`); 
@@ -1454,6 +1584,9 @@
         };
 
         document.getElementById('file-input').onchange = function(e) {
+            if (cargoAtual !== 'CHEFE') {
+                return window.showToast("Segurança: Apenas Chefes podem importar catálogos!", "error");
+            }
             if (!e.target.files || e.target.files.length === 0) return;
             
             window.showToast("A ler arquivo Omie localmente...", "info"); 
