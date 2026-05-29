@@ -243,27 +243,15 @@
             #view-relatorios { display: block !important; }
         }
     </style>
-    <!-- Script síncrono inicial para declarar funções de fallback de imagem no escopo global antes do carregamento do DOM/módulo -->
-    <script>
-        window.tentarCarregarDuplo = function(imgEl) {
-            // Se falhou ao ler o arquivo simples, tenta com extensão dupla .png.png que o github/Vercel cria às vezes
-            if (imgEl.src.indexOf('logo-smartestoque.png.png') === -1) {
-                imgEl.src = 'logo-smartestoque.png.png';
-            } else {
-                // Caso ambos falhem, oculta graciosamente para não quebrar a UI
-                imgEl.style.display = 'none';
-            }
-        };
-    </script>
 </head>
 <body>
 
     <!-- TELA DE LOGIN -->
     <div id="view-login">
         <div class="login-card">
-            <!-- Logo Oficial via Fallback Inteligente -->
+            <!-- Logo Oficial via Fallback Inteligente Inline (Sem Erros de Referência) -->
             <div class="app-logo">
-                <img src="logo-smartestoque.png" alt="Logo Smart Estoque" id="logo-login-img" onerror="tentarCarregarDuplo(this)">
+                <img src="logo-smartestoque.png" alt="Logo Smart Estoque" id="logo-login-img" onerror="this.onerror=null; if(this.src.indexOf('logo-smartestoque.png.png')===-1){this.src='logo-smartestoque.png.png';}else{this.style.display='none';}">
             </div>
             <h2 style="color: var(--blue-dark); margin-top: 0; font-size: 24px;">Smart Estoque</h2>
             <p style="color: var(--gray); font-size: 13px; margin-bottom: 20px;">Auditoria de Inventário com Ficheiro Local</p>
@@ -277,9 +265,9 @@
     <!-- APLICAÇÃO PRINCIPAL -->
     <div id="view-app" style="display:none;">
         <div class="app-header">
-            <!-- Logo Oficial via Fallback Inteligente no Cabeçalho -->
+            <!-- Logo Oficial via Fallback Inteligente Inline no Cabeçalho (Sem Erros de Referência) -->
             <div class="app-logo" style="width: 80px; height: 80px;">
-                <img src="logo-smartestoque.png" alt="Logo Smart Estoque" id="logo-header-img" onerror="tentarCarregarDuplo(this)">
+                <img src="logo-smartestoque.png" alt="Logo Smart Estoque" id="logo-header-img" onerror="this.onerror=null; if(this.src.indexOf('logo-smartestoque.png.png')===-1){this.src='logo-smartestoque.png.png';}else{this.style.display='none';}">
             </div>
             <h2>Smart Estoque <span class="cloud-badge" style="background: var(--blue);">📄 LOCAL FILE</span></h2>
             <p>Contagens Sincronizadas na Nuvem</p>
