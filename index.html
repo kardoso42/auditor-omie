@@ -509,7 +509,8 @@
             <div style="display:flex; gap:10px; margin-bottom:4px;">
                 <div style="flex:1">
                     <label style="font-size:11px; font-weight:bold;">QTD FÍSICA (ACEITA CÁLCULOS):</label>
-                    <input type="text" id="m-qtd" placeholder="Ex: 3*12+4" onblur="esteCalculo(this)" style="font-size:20px; font-weight:bold; border:2px solid var(--blue);">
+                    <!-- Adicionado o atributo inputmode="decimal" para chamar o teclado numérico no telemóvel mantendo a compatibilidade com fórmulas inline -->
+                    <input type="text" inputmode="decimal" id="m-qtd" placeholder="Ex: 3*12+4" onblur="esteCalculo(this)" style="font-size:20px; font-weight:bold; border:2px solid var(--blue);">
                 </div>
                 <div style="width:75px"><label style="font-size:11px; font-weight:bold;">UN:</label><input type="text" id="m-un-edit"></div>
             </div>
@@ -1502,6 +1503,7 @@
                             const sistemaVal = idxSist !== -1 ? parseFloat(String(row[idxSist] || '0').replace(',','.')) : 0;
                             const cmcVal = idxCmc !== -1 ? parseFloat(String(row[idxCmc] || '0').replace(',','.')) : 0;
 
+                            // Guardamos apenas o estritamente necessário para reduzir drasticamente o uso de memória
                             temporarios.push({ 
                                 codigo: codRaw, 
                                 descricao: String(row[idxDesc]).trim().toUpperCase(), 
@@ -1522,14 +1524,16 @@
 
                     baseDados = temporarios;
                     
+                    // Mecanismo inteligente de proteção de memória
                     try {
                         const catalogoString = JSON.stringify(baseDados);
-                        if (catalogoString.length < 4800000) {
-                            localStorage.setItem('catalogo_local', catalogoString);
-                        }
-                    } catch (e) { console.error("Falha ao salvar cache:", e); }
+                        localStorage.setItem('catalogo_local', catalogoString);
+                        window.showToast("Sucesso! " + baseDados.length + " produtos carregados na cache permanente.", "success");
+                    } catch (e) { 
+                        console.warn("Espaço de cache excedido. Os produtos foram carregados na memória de sessão temporária.", e); 
+                        window.showToast("Planilha enorme carregada com sucesso na memória temporária do dispositivo!", "warning");
+                    }
 
-                    window.showToast("Sucesso! " + baseDados.length + " produtos carregados.", "success");
                     window.atualizarFiltrosDOM();
                     window.render();
                     window.fecharModalConfig();
